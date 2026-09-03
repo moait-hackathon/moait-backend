@@ -2,6 +2,8 @@ package com.moait.moai.domain.user.controller;
 
 import com.moait.moai.common.response.ApiResponse;
 import com.moait.moai.domain.user.dto.FinancialInfoRequestDTO;
+import com.moait.moai.domain.user.dto.InvestmentProfileRequestDTO;
+import com.moait.moai.domain.user.dto.InvestmentProfileResponseDTO;
 import com.moait.moai.domain.user.dto.OnboardingStepResponseDTO;
 import com.moait.moai.domain.user.service.OnboardingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,5 +35,17 @@ public class OnboardingController {
             @Valid @RequestBody FinancialInfoRequestDTO request) {
         return ResponseEntity.ok(ApiResponse.success(
                 "재무정보가 저장되었습니다.", onboardingService.updateFinancialInfo(userId, request)));
+    }
+
+    @Operation(summary = "투자성향 설문 제출",
+            description = "7문항 응답 → 점수/유형 산출. 재설문 시 이전 프로필은 최신 해제됨.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @PostMapping("/investment-profile")
+    public ResponseEntity<ApiResponse<InvestmentProfileResponseDTO>> submitInvestmentProfile(
+            @AuthenticationPrincipal Long userId,
+            @Valid @RequestBody InvestmentProfileRequestDTO request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "투자성향 분석이 완료되었습니다.",
+                onboardingService.submitInvestmentProfile(userId, request)));
     }
 }
