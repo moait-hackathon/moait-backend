@@ -76,7 +76,6 @@ public class AuthServiceImpl implements AuthService {
         return AuthTokenResponseDTO.of(
                 user.getId(),
                 jwtTokenProvider.createAccessToken(user.getId()),
-                jwtTokenProvider.createRefreshToken(user.getId()),
                 onboardingStepResolver.resolve(user));
     }
 
