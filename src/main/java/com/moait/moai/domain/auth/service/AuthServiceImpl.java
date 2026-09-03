@@ -5,6 +5,7 @@ import com.moait.moai.common.exception.ErrorCode;
 import com.moait.moai.common.enums.TermsType;
 import com.moait.moai.common.security.JwtTokenProvider;
 import com.moait.moai.domain.auth.dto.AuthTokenResponseDTO;
+import com.moait.moai.domain.auth.dto.LoginRequestDTO;
 import com.moait.moai.domain.auth.dto.SignupRequestDTO;
 import com.moait.moai.domain.auth.dto.SignupRequestDTO.AgreementItem;
 import com.moait.moai.domain.couple.entity.Invitation;
@@ -57,6 +58,21 @@ public class AuthServiceImpl implements AuthService {
         saveAgreements(user.getId(), request.agreements());
         invitationRepository.save(Invitation.createMaster(user.getId(), generateUniqueInviteCode()));
 
+        return issueTokens(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AuthTokenResponseDTO login(LoginRequestDTO request) {
+        User user = userRepository.findByPhone(request.phone())
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+        }
+        return issueTokens(user);
+    }
+
+    private AuthTokenResponseDTO issueTokens(User user) {
         return AuthTokenResponseDTO.of(
                 user.getId(),
                 jwtTokenProvider.createAccessToken(user.getId()),

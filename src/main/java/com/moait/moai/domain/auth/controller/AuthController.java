@@ -2,6 +2,7 @@ package com.moait.moai.domain.auth.controller;
 
 import com.moait.moai.common.response.ApiResponse;
 import com.moait.moai.domain.auth.dto.AuthTokenResponseDTO;
+import com.moait.moai.domain.auth.dto.LoginRequestDTO;
 import com.moait.moai.domain.auth.dto.SignupRequestDTO;
 import com.moait.moai.domain.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,5 +31,13 @@ public class AuthController {
         AuthTokenResponseDTO data = authService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("회원가입이 완료되었습니다.", data));
+    }
+
+    @Operation(summary = "로그인", description = "휴대폰번호 / 비밀번호 로그인. 성공 시 토큰 발급.")
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<AuthTokenResponseDTO>> login(
+            @Valid @RequestBody LoginRequestDTO request) {
+        AuthTokenResponseDTO data = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success("로그인되었습니다.", data));
     }
 }
