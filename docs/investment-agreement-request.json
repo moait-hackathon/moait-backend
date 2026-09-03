@@ -1,0 +1,56 @@
+{
+  "personA": {
+    "lossTolerance": "UP_TO_30",
+    "capitalProtection": "BELOW_80",
+    "lossReaction": "BUY_MORE",
+    "psychologicalBurden": "TOLERATE_20",
+    "emergencyFundMonths": 12,
+    "incomeStability": "STABLE",
+    "fixedCostRatio": 30.0,
+    "investmentAssetRatio": 28.0,
+    "plannedExpense": "NONE",
+    "investmentHorizon": "Y5_10",
+    "withdrawalPlan": "NONE",
+    "investmentExperience": "STOCK",
+    "financialKnowledgeCorrectAnswers": 5
+  },
+  "personB": {
+    "lossTolerance": "UP_TO_10",
+    "capitalProtection": "P90",
+    "lossReaction": "SELL_PART",
+    "psychologicalBurden": "TOLERATE_10",
+    "emergencyFundMonths": 6,
+    "incomeStability": "STABLE",
+    "fixedCostRatio": 35.0,
+    "investmentAssetRatio": 33.0,
+    "plannedExpense": "SOME",
+    "investmentHorizon": "Y3_5",
+    "withdrawalPlan": "FIXED_PARTIAL",
+    "investmentExperience": "BOND_FUND_ETF",
+    "financialKnowledgeCorrectAnswers": 3
+  },
+  "jointFund": {
+    "lossTolerance": "UP_TO_10",
+    "capitalProtection": "P90",
+    "lossReaction": "HOLD",
+    "psychologicalBurden": "TOLERATE_10",
+    "emergencyFundMonths": 6,
+    "incomeStability": "STABLE",
+    "fixedCostRatio": 32.0,
+    "investmentAssetRatio": 30.0,
+    "plannedExpense": "MOST",
+    "investmentHorizon": "Y1_2",
+    "withdrawalPlan": "FIXED_PARTIAL",
+    "investmentExperience": "BOND_FUND_ETF",
+    "financialKnowledgeCorrectAnswers": 3
+  },
+  "goal": {
+    "targetAmount": 200000000,
+    "currentAmount": 100000000,
+    "monthlyContribution": 3000000,
+    "additionalDeposit": 0,
+    "plannedWithdrawal": 0,
+    "estimatedFeesAndTaxes": 0,
+    "targetDate": "2028-09-03"
+  }
+}

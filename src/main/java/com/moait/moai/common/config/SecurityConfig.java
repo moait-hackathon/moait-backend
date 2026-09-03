@@ -33,6 +33,7 @@ public class SecurityConfig {
     /** 인증 없이 접근을 허용하는 경로. */
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
+            "/api/v1/investment-analyses/agreements",
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/v3/api-docs/**"
