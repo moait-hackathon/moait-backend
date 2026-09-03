@@ -15,15 +15,18 @@
 - **Language**: Java 21 (Gradle Toolchain 으로 고정, foojay-resolver 가 자동 프로비저닝)
 - **Framework**: Spring Boot 4.1.1 (Spring Framework 7 / Spring MVC), Spring Security 7
 - **ORM / Persistence**: Spring Data JPA (Hibernate), HikariCP (Spring Boot 기본 커넥션 풀)
-- **Database**: MySQL 8.x (`com.mysql:mysql-connector-j`)
+- **Database**: MySQL 8.x (`com.mysql:mysql-connector-j`). 스키마는 저장소 루트 `MoAItDB.sql` 로 관리 (`ddl-auto=validate`)
 - **Build Tool**: Gradle (Wrapper 9.7.1), 산출물은 실행 가능한 `bootJar` (내장 Tomcat)
 - **API Documentation**: springdoc-openapi 3.1.0 (`springdoc-openapi-starter-webmvc-ui`)
+- **인증**: JWT (JJWT `io.jsonwebtoken:jjwt-*:0.12.6`) — STATELESS. `common/security` 참고
 - **Validation**: Jakarta Bean Validation (`spring-boot-starter-validation`)
 - **Logging**: SLF4J + Logback (Spring Boot 기본), Lombok `@Slf4j`
 - **Utilities**: Lombok, Jackson (JSR-310 자동 구성), Spring Boot DevTools
-- **Testing**: JUnit 5, Mockito, Spring Boot Test 슬라이스(`@WebMvcTest`, `@DataJpaTest`), `spring-security-test`
+- **Testing**: JUnit 5, Mockito, Spring Boot Test 슬라이스(`@WebMvcTest`, `@DataJpaTest`), `spring-security-test`, 테스트 DB 는 H2(`MODE=MySQL`)
 
-> 아직 도입하지 않았지만 논의 중인 항목: Redis(캐시/세션), JWT 인증(JJWT 등), DB 마이그레이션 도구(Flyway). 도입 시 이 문서를 갱신합니다.
+> Spring Boot 4 는 **Jackson 3** (`tools.jackson.databind.*`) 를 사용한다. 자동 구성되는 `ObjectMapper` 빈은 Jackson 3 타입이므로, 직접 주입 시 `com.fasterxml.jackson.databind.ObjectMapper` 가 아니라 `tools.jackson.databind.ObjectMapper` 를 import 한다.
+
+> 아직 도입하지 않았지만 논의 중인 항목: Redis(캐시/세션), DB 마이그레이션 도구(Flyway). 도입 시 이 문서를 갱신합니다.
 
 ### 코드 작성 규칙
 1. **Google/Oracle Java Code Style 준수**:
@@ -41,7 +44,7 @@
    - 연관관계 `fetch` 전략은 기본 `LAZY`. 필요한 조회는 fetch join / `@EntityGraph` / 프로젝션으로 **N+1 을 방지**합니다.
    - 조회 전용 메서드에는 `@Transactional(readOnly = true)` 를 지정합니다.
    - Entity 에는 `@Setter` 를 열지 않고, 의미 있는 도메인 메서드로 상태를 변경합니다. 기본 생성자는 `protected`.
-   - 운영/공유 환경에서 `spring.jpa.hibernate.ddl-auto` 는 `validate` 또는 `none` 을 사용합니다. 스키마 변경은 SQL 스크립트(또는 도입 시 Flyway)로 관리합니다.
+   - 모든 환경에서 `spring.jpa.hibernate.ddl-auto` 는 `validate`(로컬/운영) 또는 `none` 을 사용합니다. **스키마의 소스 오브 트루스는 저장소 루트 `MoAItDB.sql`** 이며, 변경 시 이 파일을 수정합니다 (엔티티가 아님). ERDCloud 다이어그램은 시각화 용도이며 SQL 과 어긋나면 SQL 이 우선입니다.
    - 로그 출력 시 개인정보(비밀번호, 주민번호) 및 계좌번호가 직접 노출되지 않도록 가공 처리합니다.
 
 ### 네이밍 규칙
@@ -77,11 +80,13 @@
 4. **문서화 및 예외 처리 고도화**: Swagger 명세 최신화 및 사용자 친화적 공통 응답/에러 포맷 유지.
 
 ### 폴더 구조
-> 도메인 설계 확정 전이라 **패키지 골격만** 잡혀 있습니다. 각 폴더에는 역할을 설명하는 `README.md` 만 있고 실제 클래스는 아직 없습니다(`SecurityConfig` 제외).
-> 새 도메인(계좌/예산/미션 등)은 `domain/` 아래에 `member` 와 동일한 하위 패키지(controller/service/repository/entity/dto) 구조로 추가합니다.
+> `common/` 공통 인프라는 구현 완료. `domain/` 은 도메인별로 순차 구현 중이며, 계층 흐름과 도메인 목록은 `domain/README.md` 참고.
+> 새 도메인은 `domain/<name>/` 아래에 `controller/ service/ repository/ entity/ dto/` 하위 패키지 구조로 추가합니다.
 
 ```text
 moait-backend/
+├── MoAItDB.sql                                      # DB 스키마 (소스 오브 트루스)
+├── docs/                                            # api-spec.md, erd-user-couple-goal.md, DEPLOY.md
 ├── src/
 │   ├── main/
 │   │   ├── java/
@@ -89,24 +94,27 @@ moait-backend/
 │   │   │       └── moait/
 │   │   │           └── moai/
 │   │   │               ├── MoaiApplication.java     # 메인 클래스
-│   │   │               ├── common/                  # 공통 인프라 및 유틸리티
-│   │   │               │   ├── config/              # SecurityConfig, SwaggerConfig, JpaConfig
-│   │   │               │   ├── entity/              # BaseTimeEntity (Auditing 공통 상위 클래스)
+│   │   │               ├── common/                  # 공통 인프라
+│   │   │               │   ├── config/              # SecurityConfig, JpaConfig
+│   │   │               │   ├── security/            # JwtTokenProvider, JwtAuthenticationFilter, EntryPoint, JwtProperties
+│   │   │               │   ├── entity/              # BaseCreatedEntity, BaseTimeEntity (Auditing 공통 상위)
 │   │   │               │   ├── exception/           # ErrorCode, BusinessException, GlobalExceptionHandler
-│   │   │               │   ├── response/            # 공통 응답 규격 (ApiResponse, ErrorResponse)
+│   │   │               │   ├── response/            # ApiResponse, ErrorResponse
 │   │   │               │   └── util/                # MaskingUtils 등 유틸 클래스
-│   │   │               └── domain/                  # 비즈니스 도메인 모듈
-│   │   │                   └── member/              # 회원 도메인 (계층 틀 예시)
+│   │   │               └── domain/                  # 비즈니스 도메인 (auth / user / couple / goal / report)
+│   │   │                   └── <name>/
 │   │   │                       ├── controller/
 │   │   │                       ├── service/         # 인터페이스 + ServiceImpl
 │   │   │                       ├── repository/
 │   │   │                       ├── entity/
 │   │   │                       └── dto/
 │   │   └── resources/
-│   │       ├── application.properties               # 공통 설정
-│   │       └── application-local.properties         # 로컬 전용 설정 (git 제외, 직접 생성)
+│   │       ├── application.properties               # 공통 설정 (jwt 개발 기본값 포함)
+│   │       ├── application-local.properties         # 로컬 전용 설정 (git 제외)
+│   │       └── application-prod.properties          # 운영 설정 (모든 시크릿은 환경변수 주입)
 │   └── test/
-│       └── java/                                    # JUnit5 및 Mockito 테스트 코드
+│       ├── java/                                    # JUnit5 및 Mockito 테스트 코드
+│       └── resources/application.properties         # 테스트용 (H2 + jwt 고정값)
 ├── build.gradle                                     # 의존성 및 빌드 설정
 ├── settings.gradle                                  # foojay-resolver (JDK 자동 프로비저닝)
 └── AGENTS.md                                        # 에이전트 및 개발 지침서
@@ -196,12 +204,12 @@ moait-backend/
 | 전체 빌드 | `./gradlew build` |
 | 컴파일만 | `./gradlew compileJava` |
 | 전체 테스트 | `./gradlew test` |
-| 단일 테스트 | `./gradlew test --tests "com.moait.moai.domain.member.MemberServiceTest"` |
+| 단일 테스트 | `./gradlew test --tests "com.moait.moai.domain.auth.AuthServiceTest"` |
 | 앱 실행 | `./gradlew bootRun` |
 | 산출물(jar) | `./gradlew bootJar` → `build/libs/moai-0.0.1-SNAPSHOT.jar` |
 | Swagger UI | 앱 실행 후 `http://localhost:8080/swagger-ui.html` |
 
-> 로컬 실행/테스트에는 MySQL 접속 정보가 필요합니다. `application-local.properties` 에 datasource 설정을 두거나, 통합 테스트는 Testcontainers 사용을 권장합니다.
+> 로컬 실행에는 MySQL 접속 정보가 필요합니다 (`application-local.properties`). 최초 1회 `MoAItDB.sql` 로 스키마를 생성합니다. `./gradlew test` 는 H2 인메모리로 동작하므로 MySQL 불필요.
 
 ### 작업 분류
 AI 에이전트 및 개발자는 작업을 진행하기 전 다음 분류에 따라 작업을 명확히 식별합니다.
