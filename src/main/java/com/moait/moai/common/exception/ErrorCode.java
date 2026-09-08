@@ -13,6 +13,7 @@ public enum ErrorCode {
 
     // ===== 공통 =====
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "요청 값이 올바르지 않습니다."),
+    ANALYSIS_DATA_INCOMPLETE(HttpStatus.UNPROCESSABLE_CONTENT, "투자 분석에 필요한 저장 데이터가 없거나 올바르지 않습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "대상을 찾을 수 없습니다."),

@@ -11,6 +11,7 @@ public record InvestmentAgreementResponseDTO(
         GoalRequirement goalRequirement,
         Agreement agreement) {
 
+    /** A·B는 보유 자산 기반 점수이며 추정하지 않는 세 상한 필드는 null이다. C는 공동 설문 상한을 포함한다. */
     public record RiskScore(Integer preferenceScore, Integer userLimit,
                             Integer serviceLimit, Integer finalLimit, String profileType) { }
 

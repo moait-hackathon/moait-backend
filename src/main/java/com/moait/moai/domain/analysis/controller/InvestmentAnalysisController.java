@@ -24,12 +24,13 @@ public class InvestmentAnalysisController {
     private final InvestmentAnalysisService investmentAnalysisService;
 
     @Operation(summary = "부부 투자 합의안 생성",
-            description = "JWT 토큰 인증이 필요한 API입니다. (개발 테스트 편의를 위해 SecurityConfig에 의해 무인증 접근이 허용되어 있습니다.) 공동 목표(goalId)의 합의안을 생성하고 investment_report에 저장합니다. C는 공동 설문 6개 항목, R은 A×0.2+B×0.2+C×0.6과 상한으로 계산합니다. G는 임시 수익률 구간 규칙이며 확률 시뮬레이션이 아닙니다.",
+            description = "userId로 연결된 커플의 공동 목표와 두 사람의 활성 보유 자산을 DB에서 조회합니다. A(male_id)·B(female_id)는 평가금액 가중 위험점수, C는 저장된 공동 설문 6개 항목입니다. R은 A×0.2+B×0.2+C×0.6에 공동 설문 상한을 적용하며 결과를 investment_report에 저장합니다. 개인 상한은 추정하지 않아 null입니다. G는 임시 수익률 구간이며 달성 확률이 아닙니다. 개발 테스트 설정은 무인증 접근을 허용합니다.",
             security = @SecurityRequirement(name = "bearerAuth"))
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "분석 성공")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수 입력 누락 또는 잘못된 값")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (JWT 토큰 없음 또는 유효하지 않음)")
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "공동 목표 없음")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "422", description = "온보딩 미완료, 분석 데이터 부족 또는 지원하지 않는 자산 데이터")
     @PostMapping("/agreements")
     public ResponseEntity<ApiResponse<InvestmentAgreementResponseDTO>> createAgreement(
             @Valid @RequestBody InvestmentAgreementRequestDTO request) {

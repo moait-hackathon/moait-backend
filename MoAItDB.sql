@@ -47,7 +47,7 @@ CREATE TABLE `invitation` (
     `invitee_id`  BIGINT      NULL COMMENT '코드 입력한 사용자 (마스터 row는 NULL)',
     `invite_code` VARCHAR(30) NOT NULL COMMENT '6자리 영숫자, 만료 없음',
     `status`      VARCHAR(30) NOT NULL DEFAULT 'CREATED' COMMENT 'CREATED / REQUESTED / ACCEPTED',
-    `created_at`  DATETIME    NULL DEFAULT CURRENT_TIMESTAMP,
+    `created_at`  DATETIME    NULL     DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_invitation_inviter_invitee` (`inviter_id`, `invitee_id`),
     KEY `idx_invitation_code` (`invite_code`),
@@ -71,7 +71,7 @@ CREATE TABLE `couple` (
     UNIQUE KEY `uk_couple_male_female` (`male_id`, `female_id`),
     KEY `idx_couple_male` (`male_id`),
     KEY `idx_couple_female` (`female_id`),
-    CONSTRAINT `fk_couple_male`   FOREIGN KEY (`male_id`)   REFERENCES `user` (`id`),
+    CONSTRAINT `fk_couple_male` FOREIGN KEY (`male_id`) REFERENCES `user` (`id`),
     CONSTRAINT `fk_couple_female` FOREIGN KEY (`female_id`) REFERENCES `user` (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
@@ -91,42 +91,45 @@ CREATE TABLE `terms_agreement` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- ---------------------------------------------------------------------
---  investment_profile  (개인 투자성향 설문 - 재설문 이력)
--- ---------------------------------------------------------------------
-DROP TABLE IF EXISTS `investment_profile`;
-CREATE TABLE `investment_profile` (
-    `id`                        BIGINT      NOT NULL AUTO_INCREMENT,
-    `user_id`                   BIGINT      NOT NULL,
-    `investment_experience`     VARCHAR(20) NULL COMMENT 'NONE / SAVINGS_ONLY / ETF_ONLY / STOCK_ALL / ETC',
-    `loss_reaction`             VARCHAR(20) NULL COMMENT 'SELL_ALL / SELL_PART / HOLD / BUY_MORE',
-    `max_tolerable_loss_rate`   INT         NULL COMMENT '감당 가능 최대 손실률(%)',
-    `investment_horizon`        VARCHAR(20) NULL COMMENT 'UNDER_1Y / Y1_3 / Y3_5 / OVER_5Y',
-    `holding_assets`            JSON        NULL COMMENT '[{"type":"ETF","amount":3000000}]',
-    `monthly_investable_amount` BIGINT      NULL COMMENT '매월 투자 가능액(원)',
-    `emergency_fund_secured`    BOOLEAN     NULL COMMENT '비상자금 확보 여부',
-    `risk_profile_type`         VARCHAR(20) NULL COMMENT 'STABLE / STABLE_SEEKING / NEUTRAL / ACTIVE / AGGRESSIVE',
-    `risk_profile_score`        INT         NULL,
-    `is_latest`                 BOOLEAN     NULL DEFAULT TRUE,
-    `created_at`                DATETIME    NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    KEY `idx_profile_user_latest` (`user_id`, `is_latest`),
-    CONSTRAINT `fk_profile_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-
--- ---------------------------------------------------------------------
---  goal  (부부 공동 목표 - 커플당 1개)
+--  goal  (부부 공동 목표 + 공동 투자성향 - 커플당 1개, 덮어쓰기 / 이력 없음)
+--
+--  커플 연결 시 status='DRAFT' 로 빈 row 생성 → 온보딩 5단계
+--  (목표 설정 / 투자 계획 / 재무 여유 / 위험 반응 / 투자 경험)로 채우고 'ACTIVE'.
+--  개인별 투자성향 설문(investment_profile)은 폐기.
+--  마이페이지에서 각 값 수정 가능. 목표 달성 시 target_amount/target_date 만
+--  다시 입력받아 같은 row 를 갱신한다.
 -- ---------------------------------------------------------------------
 DROP TABLE IF EXISTS `goal`;
 CREATE TABLE `goal` (
     `id`                        BIGINT      NOT NULL AUTO_INCREMENT,
     `couple_id`                 BIGINT      NOT NULL,
+
+    -- 1/5 목표 설정
     `target_amount`             BIGINT      NULL COMMENT '목표 금액(원)',
-    `current_amount`            BIGINT      NULL DEFAULT 0 COMMENT '현재 마련한 금액(원)',
+    `target_date`               DATE        NULL COMMENT '목표일',
+    `investment_period_months`  INT         NULL COMMENT 'target_date 기준 산출 개월수 (투자기간 점수 15점)',
+
+    -- 2/5 투자 계획
+    `current_amount`            BIGINT      NULL DEFAULT 0 COMMENT '현재 투자 가능 금액(원) = 시작 자본, 이후 진척 추적',
     `current_amount_updated_at` DATETIME    NULL,
-    `target_date`               DATE        NULL COMMENT '목표 시점',
-    `max_allowed_loss_rate`     INT         NULL COMMENT '공동 투자 허용 최대 손실률(%)',
-    `joint_risk_profile_type`   VARCHAR(30) NULL COMMENT '두 사람 성향 + 손실률로 산출한 커플 공동 투자성향',
-    `status`                    VARCHAR(30) NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE / ACHIEVED / CANCELLED',
+    `monthly_investable_amount` BIGINT      NULL COMMENT '월 투자 가능 금액(원)',
+
+    -- 3/5 재무 여유 (점수 O)
+    `emergency_fund_months`     VARCHAR(20) NULL COMMENT '비상자금(생활비 개월수) UNDER_1M / M1_3 / M3_6 / M6_12 / OVER_12M (18점)',
+    `monthly_surplus_band`      VARCHAR(20) NULL COMMENT '월 여유자금 비율 UNDER_0 / UNDER_10 / B10_20 / B20_30 / OVER_30 (17점)',
+
+    -- 4/5 위험 반응 (점수 O)
+    `max_allowed_loss_rate`     INT         NULL COMMENT '최대 허용손실 0/5/10/20/30/40 (40=30%초과 감수) (25점)',
+    `loss_reaction`             VARCHAR(20) NULL COMMENT 'SELL_ALL / SELL_MOST / SELL_PART / HOLD / BUY_MORE (15점)',
+
+    -- 5/5 투자 경험 (점수 O)
+    `investment_experience`     VARCHAR(20) NULL COMMENT 'NONE / SAVINGS_ONLY / ETF_ONLY / STOCK_ALL / MULTI_ASSET (10점)',
+
+    -- 산출 결과
+    `risk_profile_score`        INT         NULL COMMENT '6문항 공동 위험점수 R (0~100)',
+    `joint_risk_profile_type`   VARCHAR(30) NULL COMMENT 'R 점수 구간 → STABLE / STABLE_SEEKING / NEUTRAL / ACTIVE / AGGRESSIVE',
+
+    `status`                    VARCHAR(30) NULL DEFAULT 'DRAFT' COMMENT 'DRAFT(온보딩 전) / ACTIVE / ACHIEVED / CANCELLED',
     `created_at`                DATETIME    NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`                DATETIME    NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
