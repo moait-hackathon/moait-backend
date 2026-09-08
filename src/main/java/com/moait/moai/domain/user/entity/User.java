@@ -17,7 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "user")
+@Table(name = "`user`") // user 는 다수 DB 에서 예약어 — 인용부호로 매핑 (H2/MySQL 공통)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseCreatedEntity {
