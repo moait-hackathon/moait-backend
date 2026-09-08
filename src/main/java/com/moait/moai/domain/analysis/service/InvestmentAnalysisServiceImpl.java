@@ -8,38 +8,94 @@ import com.moait.moai.domain.analysis.dto.InvestmentAgreementResponseDTO;
 import com.moait.moai.domain.analysis.dto.InvestmentAgreementResponseDTO.GoalRequirement;
 import com.moait.moai.domain.analysis.dto.InvestmentAgreementResponseDTO.Recommendation;
 import com.moait.moai.domain.analysis.dto.InvestmentAgreementResponseDTO.RiskScore;
+import com.moait.moai.domain.analysis.dto.JointRiskAssessmentRequestDTO;
 import com.moait.moai.domain.analysis.dto.RiskAssessmentRequestDTO;
+import com.moait.moai.domain.report.entity.InvestmentReport;
+import com.moait.moai.domain.report.repository.InvestmentReportRepository;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class InvestmentAnalysisServiceImpl implements InvestmentAnalysisService {
 
     private final AgreementGenerator agreementGenerator;
+    private final InvestmentReportRepository reportRepository;
 
     @Override
-    @Transactional(readOnly = true)
-    public InvestmentAgreementResponseDTO analyze(InvestmentAgreementRequestDTO request) {
+    public InvestmentAgreementResponseDTO analyze(Long userId, InvestmentAgreementRequestDTO request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+        if (reportRepository.countAccessibleGoal(request.goalId(), userId) == 0) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND,
+                    "접근 가능한 공동 목표를 찾을 수 없습니다.");
+        }
         RiskScore a = score(request.personA());
         RiskScore b = score(request.personB());
-        RiskScore c = score(request.jointFund());
-
-        int weighted = (int) Math.round(a.preferenceScore() * 0.2
-                + b.preferenceScore() * 0.2 + c.preferenceScore() * 0.6);
-        int finalMax = Math.min(a.finalLimit(), Math.min(b.finalLimit(), c.finalLimit()));
-        int center = Math.min(weighted, finalMax);
-        Recommendation recommendation = new Recommendation(
-                weighted, center, Math.max(0, center - 5), Math.min(finalMax, center + 5), finalMax);
         GoalRequirement goal = calculateGoal(request.goal());
+        RiskScore c = scoreJoint(request.jointFund(), goal.investmentMonths());
+
+        BigDecimal weighted = BigDecimal.valueOf(a.preferenceScore() + b.preferenceScore()
+                + c.preferenceScore() * 3L).divide(BigDecimal.valueOf(5));
+        int finalMax = Math.min(a.finalLimit(), Math.min(b.finalLimit(), c.finalLimit()));
+        BigDecimal center = weighted.min(BigDecimal.valueOf(finalMax));
+        Recommendation recommendation = new Recommendation(
+                weighted, center, Math.max(0, center.intValue() - 5),
+                Math.min(finalMax, center.intValue() + 5), finalMax);
         String status = determineStatus(recommendation, goal);
 
-        return new InvestmentAgreementResponseDTO(a, b, c, recommendation, goal,
+        InvestmentAgreementResponseDTO result = new InvestmentAgreementResponseDTO(a, b, c, recommendation, goal,
                 agreementGenerator.generate(recommendation, goal, request.goal(), status));
+        reportRepository.save(InvestmentReport.from(request.goalId(), request.goal(), result));
+        return result;
+    }
+
+    static RiskScore scoreJoint(JointRiskAssessmentRequestDTO q, int months) {
+        int loss = switch (q.lossTolerance()) {
+            case NO_LOSS -> 0; case UP_TO_5 -> 6; case UP_TO_10 -> 12;
+            case UP_TO_20 -> 19; case UP_TO_30 -> 23; case OVER_30 -> 25;
+        };
+        int reaction = switch (q.lossReaction()) {
+            case SELL_ALL -> 0; case SELL_MOST -> 3; case SELL_PART -> 7;
+            case HOLD -> 11; case BUY_MORE -> 15;
+        };
+        int emergency = q.emergencyFundMonths() < 1 ? 0 : q.emergencyFundMonths() < 3 ? 4
+                : q.emergencyFundMonths() < 6 ? 9 : q.emergencyFundMonths() < 12 ? 14 : 18;
+        BigDecimal available = q.monthlyNetIncome().subtract(q.essentialExpenses()).subtract(q.debtRepayment());
+        int surplus = q.monthlyNetIncome().signum() == 0 || available.signum() <= 0 ? 0
+                : available.compareTo(q.monthlyNetIncome().multiply(new BigDecimal("0.10"))) < 0 ? 4
+                : available.compareTo(q.monthlyNetIncome().multiply(new BigDecimal("0.20"))) < 0 ? 8
+                : available.compareTo(q.monthlyNetIncome().multiply(new BigDecimal("0.30"))) < 0 ? 13 : 17;
+        int horizon = months < 12 ? 0 : months < 24 ? 3 : months < 36 ? 6
+                : months < 60 ? 9 : months < 120 ? 12 : 15;
+        int experience = switch (q.investmentExperience()) {
+            case NONE -> 0; case SAVINGS_ONLY -> 2; case BOND_FUND_ETF -> 5;
+            case STOCK -> 8; case HIGH_RISK -> 10;
+        };
+        int preference = loss + reaction + emergency + surplus + horizon + experience;
+        int userLimit = switch (q.lossTolerance()) {
+            case NO_LOSS -> 20; case UP_TO_5 -> 30; case UP_TO_10 -> 45;
+            case UP_TO_20 -> 65; case UP_TO_30 -> 80; case OVER_30 -> 100;
+        };
+        int serviceLimit = months < 12 ? 20 : months < 24 ? 40 : months < 36 ? 55
+                : months < 60 ? 70 : months < 120 ? 85 : 100;
+        int reactionLimit = switch (q.lossReaction()) {
+            case SELL_ALL -> 20; case SELL_MOST -> 30; case SELL_PART -> 45;
+            case HOLD -> 70; case BUY_MORE -> 90;
+        };
+        userLimit = Math.min(userLimit, reactionLimit);
+        int emergencyLimit = q.emergencyFundMonths() < 1 ? 20 : q.emergencyFundMonths() < 3 ? 30
+                : q.emergencyFundMonths() < 6 ? 50 : 100;
+        serviceLimit = Math.min(serviceLimit, emergencyLimit);
+        return new RiskScore(preference, userLimit, serviceLimit,
+                Math.min(userLimit, serviceLimit), profileType(preference));
     }
 
     private RiskScore score(RiskAssessmentRequestDTO q) {
@@ -154,30 +210,34 @@ public class InvestmentAnalysisServiceImpl implements InvestmentAnalysisService 
 
     private GoalRequirement calculateGoal(GoalAnalysisRequestDTO goal) {
         long months = ChronoUnit.MONTHS.between(LocalDate.now(Clock.systemDefaultZone()), goal.targetDate());
-        if (months < 1) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT, "목표일은 현재 날짜보다 최소 1개월 이후여야 합니다.");
+        if (months < 1 || months > 1200) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "목표일은 현재 날짜보다 1개월 이상 100년 이내여야 합니다.");
         }
-        double targetWithCosts = goal.targetAmount() + goal.plannedWithdrawal()
-                + goal.estimatedFeesAndTaxes() - goal.additionalDeposit();
-        double zeroReturnValue = goal.currentAmount() + goal.monthlyContribution() * months;
-        double annualRate = zeroReturnValue >= targetWithCosts ? 0.0
-                : solveAnnualRate(goal.currentAmount(), goal.monthlyContribution(), months, targetWithCosts);
-        double percent = Math.round(annualRate * 1000.0) / 10.0;
-        int[] range = goalRange(percent);
-        return new GoalRequirement(percent, range[0], range[1], percent <= 20.0);
-    }
-
-    private double solveAnnualRate(long present, long monthly, long months, double target) {
-        double low = 0.0;
-        double high = 10.0;
+        BigDecimal target = BigDecimal.valueOf(goal.targetAmount());
+        BigDecimal present = BigDecimal.valueOf(goal.currentAmount());
+        BigDecimal monthly = BigDecimal.valueOf(goal.monthlyContribution());
+        BigDecimal zeroReturn = present.add(monthly.multiply(BigDecimal.valueOf(months)));
+        if (zeroReturn.compareTo(target) >= 0) {
+            return new GoalRequirement(0.0, 0, 20, true, (int) months, "LEGACY_RETURN_BANDS");
+        }
+        if (present.signum() == 0 && (monthly.signum() == 0 || months == 1)) {
+            return new GoalRequirement(null, 100, 100, false, (int) months, "LEGACY_RETURN_BANDS");
+        }
+        BigDecimal low = BigDecimal.ZERO;
+        BigDecimal high = target.divide(present.signum() > 0 ? present : monthly,
+                MathContext.DECIMAL128).max(BigDecimal.ONE);
         for (int i = 0; i < 200; i++) {
-            double mid = (low + high) / 2.0;
-            double monthlyRate = Math.pow(1.0 + mid, 1.0 / 12.0) - 1.0;
-            double future = present * Math.pow(1.0 + monthlyRate, months)
-                    + monthly * (Math.pow(1.0 + monthlyRate, months) - 1.0) / monthlyRate;
-            if (future < target) low = mid; else high = mid;
+            BigDecimal mid = low.add(high).divide(BigDecimal.valueOf(2), MathContext.DECIMAL128);
+            BigDecimal growth = BigDecimal.ONE.add(mid).pow((int) months, MathContext.DECIMAL128);
+            BigDecimal future = present.multiply(growth).add(monthly.multiply(
+                    growth.subtract(BigDecimal.ONE).divide(mid, MathContext.DECIMAL128)));
+            if (future.compareTo(target) < 0) low = mid; else high = mid;
         }
-        return high;
+        double percent = BigDecimal.ONE.add(high).pow(12, MathContext.DECIMAL128)
+                .subtract(BigDecimal.ONE).multiply(BigDecimal.valueOf(100)).doubleValue();
+        int[] range = goalRange(percent);
+        return new GoalRequirement(BigDecimal.valueOf(percent).setScale(1, RoundingMode.HALF_UP).doubleValue(),
+                range[0], range[1], percent <= 20.0, (int) months, "LEGACY_RETURN_BANDS");
     }
 
     private int[] goalRange(double rate) {
@@ -190,14 +250,17 @@ public class InvestmentAnalysisServiceImpl implements InvestmentAnalysisService 
         return new int[]{100, 100};
     }
 
-    private String determineStatus(Recommendation r, GoalRequirement g) {
-        if (g.rangeMax() < r.rangeMin()) return "LOWER_RISK_SUFFICIENT";
-        if (g.rangeMin() <= r.rangeMax() && g.rangeMax() >= r.rangeMin()) return "SUITABLE";
-        if (g.rangeMin() <= r.finalMax()) return "CONDITIONAL";
+    static String determineStatus(Recommendation r, GoalRequirement g) {
+        if (!g.realistic() || g.rangeMin() > r.finalMax()) return "UNSUITABLE";
+        BigDecimal difference = BigDecimal.valueOf(g.rangeMin()).subtract(r.centerScore());
+        if (difference.compareTo(BigDecimal.valueOf(-15)) <= 0) return "LOWER_RISK_SUFFICIENT";
+        if (difference.compareTo(BigDecimal.valueOf(-5)) < 0) return "GOAL_INCREASE_POSSIBLE";
+        if (difference.compareTo(BigDecimal.valueOf(5)) <= 0) return "SUITABLE";
+        if (difference.compareTo(BigDecimal.valueOf(15)) < 0) return "CONDITIONAL";
         return "UNSUITABLE";
     }
 
-    private String profileType(int score) {
+    private static String profileType(int score) {
         if (score <= 20) return "STABLE";
         if (score <= 40) return "STABLE_SEEKING";
         if (score <= 60) return "NEUTRAL";

@@ -1,5 +1,7 @@
 # 투자 분석 API 로컬 테스트
 
+새 설문 형식·계산 규칙·임시 G 모델의 한계는 [계산 규칙](investment-agreement-rules.md)을 참고합니다.
+
 ## 1. DB 준비
 
 MySQL에서 저장소 루트의 `MoAItDB.sql`을 먼저 실행하고, 다음 파일을 실행합니다.
@@ -66,4 +68,6 @@ http://localhost:8080/swagger-ui.html
 
 현재 분석 API는 DB의 ID를 받아 자동 조회하지 않고, 계산에 필요한 전체 설문과 목표 데이터를 요청 JSON으로 받습니다. 기존 DB에는 비상자금 개월 수, 고정비 부담률, 원금보전 기준, 금융지식 점수와 같은 필수 값이 없기 때문입니다. DB 자동 조회 API를 만들려면 해당 입력을 저장할 스키마를 먼저 확장해야 합니다.
 
-`targetDate`는 실행 시점보다 최소 1개월 뒤여야 합니다. 샘플 날짜가 지난 경우 미래 날짜로 변경합니다.
+분석 결과는 요청의 `goalId`로 기존 `investment_report`에 저장됩니다. 토큰 사용자는 해당 목표의 연결된 커플 구성원이어야 합니다. 기존 DB에는 `docs/investment-report-agreement-migration.sql`을 한 번 적용합니다.
+
+`targetDate`는 실행 시점보다 1개월 이상 100년 이내여야 합니다. 샘플 날짜가 지난 경우 미래 날짜로 변경합니다.
