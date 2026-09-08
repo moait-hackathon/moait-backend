@@ -52,4 +52,17 @@ public class Invitation extends BaseCreatedEntity {
     public static Invitation createMaster(Long inviterId, String inviteCode) {
         return new Invitation(inviterId, null, inviteCode, InvitationStatus.CREATED);
     }
+
+    /**
+     * 요청자별 복사 row. {@code inviteeId} 가 {@code inviterId} 의 코드를 입력해 연결을 요청한 상태.
+     * (마스터 row 의 {@code inviteCode} 를 그대로 복사)
+     */
+    public static Invitation createRequest(Long inviterId, Long inviteeId, String inviteCode) {
+        return new Invitation(inviterId, inviteeId, inviteCode, InvitationStatus.REQUESTED);
+    }
+
+    /** {@code REQUESTED} → {@code ACCEPTED} (연결 확정). */
+    public void accept() {
+        this.status = InvitationStatus.ACCEPTED;
+    }
 }
