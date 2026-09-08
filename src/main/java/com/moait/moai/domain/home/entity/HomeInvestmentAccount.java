@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "investment_account")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class InvestmentAccount {
+public class HomeInvestmentAccount {
 
     @Id
     @Column(name = "investment_account_id")

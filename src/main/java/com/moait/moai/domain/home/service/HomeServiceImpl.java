@@ -8,11 +8,11 @@ import com.moait.moai.domain.goal.entity.Goal;
 import com.moait.moai.domain.goal.repository.GoalRepository;
 import com.moait.moai.domain.home.dto.AssetReturnRateGraphDTO;
 import com.moait.moai.domain.home.dto.HomeResponseDTO;
-import com.moait.moai.domain.home.entity.InvestmentAccount;
-import com.moait.moai.domain.home.entity.InvestmentAsset;
-import com.moait.moai.domain.home.entity.InvestmentAssetSnapshot;
+import com.moait.moai.domain.home.entity.HomeInvestmentAccount;
+import com.moait.moai.domain.home.entity.HomeInvestmentAsset;
+import com.moait.moai.domain.home.entity.HomeInvestmentAssetSnapshot;
 import com.moait.moai.domain.home.repository.InvestmentAccountRepository;
-import com.moait.moai.domain.home.repository.InvestmentAssetRepository;
+import com.moait.moai.domain.home.repository.HomeInvestmentAssetRepository;
 import com.moait.moai.domain.home.repository.InvestmentAssetSnapshotRepository;
 import com.moait.moai.domain.user.entity.User;
 import com.moait.moai.domain.user.repository.UserRepository;
@@ -41,7 +41,7 @@ public class HomeServiceImpl implements HomeService {
     private final CoupleRepository coupleRepository;
     private final GoalRepository goalRepository;
     private final InvestmentAccountRepository investmentAccountRepository;
-    private final InvestmentAssetRepository investmentAssetRepository;
+    private final HomeInvestmentAssetRepository investmentAssetRepository;
     private final InvestmentAssetSnapshotRepository snapshotRepository;
 
     @Override
@@ -55,7 +55,7 @@ public class HomeServiceImpl implements HomeService {
         Goal goal = couple == null ? null : goalRepository.findByCoupleId(couple.getId()).orElse(null);
         User partner = couple == null ? null : userRepository.findById(couple.partnerOf(userId)).orElse(null);
 
-        List<InvestmentAsset> assets = findActiveAssets(userId, couple);
+        List<HomeInvestmentAsset> assets = findActiveAssets(userId, couple);
         AssetSummary assetSummary = summarizeAssets(assets);
 
         return new HomeResponseDTO(
@@ -72,16 +72,16 @@ public class HomeServiceImpl implements HomeService {
                 assetSummary.todayChangeAmount());
     }
 
-    private List<InvestmentAsset> findActiveAssets(Long userId, Couple couple) {
+    private List<HomeInvestmentAsset> findActiveAssets(Long userId, Couple couple) {
         List<Long> userIds = couple == null
                 ? List.of(userId)
                 : List.of(userId, couple.partnerOf(userId));
-        List<InvestmentAccount> accounts = investmentAccountRepository.findAllByUserIdInAndActiveTrue(userIds);
+        List<HomeInvestmentAccount> accounts = investmentAccountRepository.findAllByUserIdInAndActiveTrue(userIds);
         if (accounts.isEmpty()) {
             return List.of();
         }
         return investmentAssetRepository.findAllByInvestmentAccountIdInAndActiveTrue(
-                accounts.stream().map(InvestmentAccount::getId).toList());
+                accounts.stream().map(HomeInvestmentAccount::getId).toList());
     }
 
     private BigDecimal achievementRate(Goal goal) {
@@ -95,17 +95,17 @@ public class HomeServiceImpl implements HomeService {
                 .setScale(RATE_SCALE, RoundingMode.HALF_UP);
     }
 
-    private AssetSummary summarizeAssets(List<InvestmentAsset> assets) {
-        BigDecimal principal = sum(assets, InvestmentAsset::getPrincipalAmount);
-        BigDecimal changeAmount = sum(assets, InvestmentAsset::getEvaluationProfitLoss);
+    private AssetSummary summarizeAssets(List<HomeInvestmentAsset> assets) {
+        BigDecimal principal = sum(assets, HomeInvestmentAsset::getPrincipalAmount);
+        BigDecimal changeAmount = sum(assets, HomeInvestmentAsset::getEvaluationProfitLoss);
         BigDecimal returnRate = calculateRate(principal, changeAmount);
 
         if (assets.isEmpty()) {
             return new AssetSummary(returnRate, changeAmount, List.of(), ZERO_RATE, BigDecimal.ZERO);
         }
 
-        List<Long> assetIds = assets.stream().map(InvestmentAsset::getId).toList();
-        List<InvestmentAssetSnapshot> snapshots = snapshotRepository
+        List<Long> assetIds = assets.stream().map(HomeInvestmentAsset::getId).toList();
+        List<HomeInvestmentAssetSnapshot> snapshots = snapshotRepository
                 .findAllByInvestmentAssetIdInOrderBySnapshotDateAsc(assetIds);
         Map<LocalDate, SnapshotAggregate> aggregates = aggregateByDate(snapshots);
         List<AssetReturnRateGraphDTO> graph = aggregates.entrySet().stream()
@@ -121,9 +121,9 @@ public class HomeServiceImpl implements HomeService {
                 calculateRate(latest.principal(), latest.changeAmount()), latest.changeAmount());
     }
 
-    private Map<LocalDate, SnapshotAggregate> aggregateByDate(List<InvestmentAssetSnapshot> snapshots) {
+    private Map<LocalDate, SnapshotAggregate> aggregateByDate(List<HomeInvestmentAssetSnapshot> snapshots) {
         Map<LocalDate, SnapshotAggregate> aggregates = new HashMap<>();
-        for (InvestmentAssetSnapshot snapshot : snapshots) {
+        for (HomeInvestmentAssetSnapshot snapshot : snapshots) {
             SnapshotAggregate aggregate = aggregates.computeIfAbsent(snapshot.getSnapshotDate(),
                     ignored -> new SnapshotAggregate());
             aggregate.add(snapshot);
@@ -143,8 +143,8 @@ public class HomeServiceImpl implements HomeService {
                 .setScale(RATE_SCALE, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal sum(Collection<InvestmentAsset> assets,
-                           java.util.function.Function<InvestmentAsset, BigDecimal> getter) {
+    private BigDecimal sum(Collection<HomeInvestmentAsset> assets,
+                           java.util.function.Function<HomeInvestmentAsset, BigDecimal> getter) {
         return assets.stream()
                 .map(getter)
                 .filter(value -> value != null)
@@ -164,7 +164,7 @@ public class HomeServiceImpl implements HomeService {
         private BigDecimal principal = BigDecimal.ZERO;
         private BigDecimal changeAmount = BigDecimal.ZERO;
 
-        private void add(InvestmentAssetSnapshot snapshot) {
+        private void add(HomeInvestmentAssetSnapshot snapshot) {
             principal = principal.add(valueOrZero(snapshot.getPrincipalAmount()));
             changeAmount = changeAmount.add(valueOrZero(snapshot.getEvaluationProfitLoss()));
         }
