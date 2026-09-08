@@ -5,11 +5,7 @@ import com.moait.moai.common.exception.ErrorCode;
 import com.moait.moai.domain.analysis.dto.GoalAnalysisRequestDTO;
 import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO;
 import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.AssetPosition;
-import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.EmergencyFundBand;
-import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.InvestmentExperience;
 import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.JointFund;
-import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.LossReaction;
-import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.SurplusBand;
 import com.moait.moai.domain.analysis.exception.InvestmentAnalysisDataException;
 import com.moait.moai.domain.asset.repository.InvestmentAssetRepository;
 import com.moait.moai.domain.asset.repository.InvestmentAssetRepository.PortfolioPosition;
@@ -41,8 +37,8 @@ public class InvestmentAnalysisInputServiceImpl implements InvestmentAnalysisInp
             throw new InvestmentAnalysisDataException("연결된 공동 목표가 여러 개입니다. 커플 연결 상태를 확인해 주세요.");
         }
         var stored = goals.getFirst();
-        if (!"ACTIVE".equals(stored.getStatus())) {
-            throw new InvestmentAnalysisDataException("공동 목표 온보딩을 완료하고 ACTIVE 상태로 설정해 주세요.");
+        if (!stored.isActive()) {
+            throw new InvestmentAnalysisDataException("진행 중인 공동 목표만 분석할 수 있습니다.");
         }
         var goal = new GoalAnalysisRequestDTO(stored.getTargetAmount(), stored.getCurrentAmount(),
                 stored.getMonthlyInvestableAmount(), stored.getTargetDate());
@@ -57,10 +53,10 @@ public class InvestmentAnalysisInputServiceImpl implements InvestmentAnalysisInp
             throw new InvestmentAnalysisDataException("공동 목표의 max_allowed_loss_rate를 확인해 주세요.");
         }
         var joint = new JointFund(loss,
-                parse(LossReaction.class, stored.getLossReaction(), "loss_reaction"),
-                parse(EmergencyFundBand.class, stored.getEmergencyFundMonths(), "emergency_fund_months"),
-                parse(SurplusBand.class, stored.getMonthlySurplusBand(), "monthly_surplus_band"),
-                parse(InvestmentExperience.class, stored.getInvestmentExperience(), "investment_experience"));
+                requireAnswer(stored.getLossReaction(), "loss_reaction"),
+                requireAnswer(stored.getEmergencyFundMonths(), "emergency_fund_months"),
+                requireAnswer(stored.getMonthlySurplusBand(), "monthly_surplus_band"),
+                requireAnswer(stored.getInvestmentExperience(), "investment_experience"));
         var positions = assetRepository.findActivePositionsByCoupleId(stored.getCoupleId());
         return new InvestmentAnalysisInputDTO(stored.getId(), goal, joint,
                 positionsFor(positions, "A"), positionsFor(positions, "B"));
@@ -72,14 +68,10 @@ public class InvestmentAnalysisInputServiceImpl implements InvestmentAnalysisInp
                         p.getCurrentValue(), p.getCurrencyCode())).toList();
     }
 
-    private <E extends Enum<E>> E parse(Class<E> type, String value, String field) {
-        if (value != null) {
-            try {
-                return Enum.valueOf(type, value);
-            } catch (IllegalArgumentException e) {
-                throw new InvestmentAnalysisDataException("공동 목표의 " + field + " 값이 지원되지 않습니다.");
-            }
+    private <E extends Enum<E>> E requireAnswer(E value, String field) {
+        if (value == null) {
+            throw new InvestmentAnalysisDataException("공동 목표의 " + field + " 입력을 완료해 주세요.");
         }
-        throw new InvestmentAnalysisDataException("공동 목표의 " + field + " 입력을 완료해 주세요.");
+        return value;
     }
 }

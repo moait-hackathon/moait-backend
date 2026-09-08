@@ -1,7 +1,10 @@
 package com.moait.moai.domain.goal.repository;
 
 import com.moait.moai.domain.goal.entity.Goal;
+
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface GoalRepository extends JpaRepository<Goal, Long> {
 
+    Optional<Goal> findByCoupleId(Long coupleId);
+
+    boolean existsByCoupleId(Long coupleId);
     /** 복수 연결은 서비스에서 거절하며 임의의 커플을 선택하지 않는다. */
     @Transactional(readOnly = true)
     @Query(value = """

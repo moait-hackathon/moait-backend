@@ -1,5 +1,9 @@
 package com.moait.moai.domain.analysis.dto;
 
+import com.moait.moai.common.enums.EmergencyFundMonths;
+import com.moait.moai.common.enums.InvestmentExperience;
+import com.moait.moai.common.enums.LossReaction;
+import com.moait.moai.common.enums.MonthlySurplusBand;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -12,11 +16,6 @@ public record InvestmentAnalysisInputDTO(
                                 BigDecimal currentValue, String currencyCode) { }
 
     public record JointFund(Integer maxAllowedLossRate, LossReaction lossReaction,
-                            EmergencyFundBand emergencyFundBand, SurplusBand surplusBand,
+                            EmergencyFundMonths emergencyFundBand, MonthlySurplusBand surplusBand,
                             InvestmentExperience investmentExperience) { }
-
-    public enum LossReaction { SELL_ALL, SELL_MOST, SELL_PART, HOLD, BUY_MORE }
-    public enum EmergencyFundBand { UNDER_1M, M1_3, M3_6, M6_12, OVER_12M }
-    public enum SurplusBand { UNDER_0, UNDER_10, B10_20, B20_30, OVER_30 }
-    public enum InvestmentExperience { NONE, SAVINGS_ONLY, ETF_ONLY, STOCK_ALL, MULTI_ASSET }
 }

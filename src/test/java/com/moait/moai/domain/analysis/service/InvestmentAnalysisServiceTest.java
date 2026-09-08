@@ -8,16 +8,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.moait.moai.common.enums.EmergencyFundMonths;
+import com.moait.moai.common.enums.InvestmentExperience;
+import com.moait.moai.common.enums.LossReaction;
+import com.moait.moai.common.enums.MonthlySurplusBand;
 import com.moait.moai.domain.analysis.dto.GoalAnalysisRequestDTO;
 import com.moait.moai.domain.analysis.dto.InvestmentAgreementRequestDTO;
 import com.moait.moai.domain.analysis.dto.InvestmentAgreementResponseDTO.Agreement;
 import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO;
 import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.AssetPosition;
-import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.EmergencyFundBand;
-import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.InvestmentExperience;
 import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.JointFund;
-import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.LossReaction;
-import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.SurplusBand;
 import com.moait.moai.domain.analysis.exception.InvestmentAnalysisDataException;
 import com.moait.moai.domain.report.entity.InvestmentReport;
 import com.moait.moai.domain.report.repository.InvestmentReportRepository;
@@ -51,8 +51,8 @@ class InvestmentAnalysisServiceTest {
     void usesBothPortfoliosAndJointSurveyThenStoresDatabaseGoalSnapshot() {
         var goal = new GoalAnalysisRequestDTO(200000000L, 100000000L, 3000000L,
                 LocalDate.now().plusMonths(24));
-        var joint = new JointFund(10, LossReaction.HOLD, EmergencyFundBand.M6_12,
-                SurplusBand.B20_30, InvestmentExperience.ETF_ONLY);
+        var joint = new JointFund(10, LossReaction.HOLD, EmergencyFundMonths.M6_12,
+                MonthlySurplusBand.B20_30, InvestmentExperience.ETF_ONLY);
         var input = new InvestmentAnalysisInputDTO(301L, goal, joint,
                 List.of(new AssetPosition("STOCK", "HIGH", BigDecimal.TEN, "KRW")),
                 List.of(new AssetPosition("BOND", "LOW", BigDecimal.TEN, "KRW")));

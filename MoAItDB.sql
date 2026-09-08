@@ -47,7 +47,7 @@ CREATE TABLE `invitation` (
     `invitee_id`  BIGINT      NULL COMMENT '코드 입력한 사용자 (마스터 row는 NULL)',
     `invite_code` VARCHAR(30) NOT NULL COMMENT '6자리 영숫자, 만료 없음',
     `status`      VARCHAR(30) NOT NULL DEFAULT 'CREATED' COMMENT 'CREATED / REQUESTED / ACCEPTED',
-    `created_at`  DATETIME    NULL     DEFAULT CURRENT_TIMESTAMP,
+    `created_at`  DATETIME    NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_invitation_inviter_invitee` (`inviter_id`, `invitee_id`),
     KEY `idx_invitation_code` (`invite_code`),
@@ -71,7 +71,7 @@ CREATE TABLE `couple` (
     UNIQUE KEY `uk_couple_male_female` (`male_id`, `female_id`),
     KEY `idx_couple_male` (`male_id`),
     KEY `idx_couple_female` (`female_id`),
-    CONSTRAINT `fk_couple_male` FOREIGN KEY (`male_id`) REFERENCES `user` (`id`),
+    CONSTRAINT `fk_couple_male`   FOREIGN KEY (`male_id`)   REFERENCES `user` (`id`),
     CONSTRAINT `fk_couple_female` FOREIGN KEY (`female_id`) REFERENCES `user` (`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
@@ -93,8 +93,8 @@ CREATE TABLE `terms_agreement` (
 -- ---------------------------------------------------------------------
 --  goal  (부부 공동 목표 + 공동 투자성향 - 커플당 1개, 덮어쓰기 / 이력 없음)
 --
---  커플 연결 시 status='DRAFT' 로 빈 row 생성 → 온보딩 5단계
---  (목표 설정 / 투자 계획 / 재무 여유 / 위험 반응 / 투자 경험)로 채우고 'ACTIVE'.
+--  POST /goals 온보딩 5단계(목표 설정 / 투자 계획 / 재무 여유 / 위험 반응 / 투자 경험)
+--  제출 시 row 생성(status='ACTIVE'). 커플당 1개는 UNIQUE(couple_id) 로 보장.
 --  개인별 투자성향 설문(investment_profile)은 폐기.
 --  마이페이지에서 각 값 수정 가능. 목표 달성 시 target_amount/target_date 만
 --  다시 입력받아 같은 row 를 갱신한다.
@@ -129,7 +129,7 @@ CREATE TABLE `goal` (
     `risk_profile_score`        INT         NULL COMMENT '6문항 공동 위험점수 R (0~100)',
     `joint_risk_profile_type`   VARCHAR(30) NULL COMMENT 'R 점수 구간 → STABLE / STABLE_SEEKING / NEUTRAL / ACTIVE / AGGRESSIVE',
 
-    `status`                    VARCHAR(30) NULL DEFAULT 'DRAFT' COMMENT 'DRAFT(온보딩 전) / ACTIVE / ACHIEVED / CANCELLED',
+    `status`                    VARCHAR(30) NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE / ACHIEVED / CANCELLED (POST /goals 온보딩 제출 시 생성)',
     `created_at`                DATETIME    NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`                DATETIME    NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),

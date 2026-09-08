@@ -3,13 +3,20 @@ package com.moait.moai.domain.goal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.moait.moai.domain.analysis.dto.InvestmentAnalysisInputDTO.SurplusBand;
+import com.moait.moai.common.enums.EmergencyFundMonths;
+import com.moait.moai.common.enums.GoalStatus;
+import com.moait.moai.common.enums.InvestmentExperience;
+import com.moait.moai.common.enums.LossReaction;
+import com.moait.moai.common.enums.MonthlySurplusBand;
 import com.moait.moai.domain.analysis.exception.InvestmentAnalysisDataException;
 import com.moait.moai.domain.analysis.service.InvestmentAnalysisInputService;
 import com.moait.moai.domain.analysis.service.InvestmentAnalysisInputServiceImpl;
 import com.moait.moai.domain.goal.repository.GoalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -57,6 +64,8 @@ class GoalRepositoryTest {
                     monthly_investable_amount BIGINT, emergency_fund_months VARCHAR(20),
                     monthly_surplus_band VARCHAR(20), max_allowed_loss_rate INT,
                     loss_reaction VARCHAR(20), investment_experience VARCHAR(20), status VARCHAR(30),
+                    investment_period_months INT, current_amount_updated_at TIMESTAMP,
+                    risk_profile_score INT, joint_risk_profile_type VARCHAR(30),
                     created_at TIMESTAMP, updated_at TIMESTAMP)
                 """);
         jdbc.execute("""
@@ -95,8 +104,9 @@ class GoalRepositoryTest {
         var goal = goals.getFirst();
         assertThat(goal.getId()).isEqualTo(301L);
         assertThat(goal.getMonthlyInvestableAmount()).isEqualTo(3000000L);
-        assertThat(goal.getMonthlySurplusBand()).isEqualTo("B20_30");
-        assertThat(goal.getInvestmentExperience()).isEqualTo("ETF_ONLY");
+        assertThat(goal.getMonthlySurplusBand()).isEqualTo(MonthlySurplusBand.B20_30);
+        assertThat(goal.getInvestmentExperience()).isEqualTo(InvestmentExperience.ETF_ONLY);
+        assertThat(goal.getStatus()).isEqualTo(GoalStatus.ACTIVE);
         assertThat(repository.findConnectedGoalsByUserId(102L))
                 .extracting("id").containsExactly(301L);
         assertThat(repository.findConnectedGoalsByUserId(103L)).isEmpty();
@@ -120,7 +130,10 @@ class GoalRepositoryTest {
         assertThat(inputService.load(102L)).isEqualTo(input);
         assertThat(input.goalId()).isEqualTo(301L);
         assertThat(input.goal().monthlyContribution()).isEqualTo(3000000L);
-        assertThat(input.jointFund().surplusBand()).isEqualTo(SurplusBand.B20_30);
+        assertThat(input.jointFund().surplusBand()).isEqualTo(MonthlySurplusBand.B20_30);
+        assertThat(input.jointFund().emergencyFundBand()).isEqualTo(EmergencyFundMonths.M6_12);
+        assertThat(input.jointFund().lossReaction()).isEqualTo(LossReaction.HOLD);
+        assertThat(input.jointFund().investmentExperience()).isEqualTo(InvestmentExperience.ETF_ONLY);
         assertThat(input.personA()).hasSize(1);
         assertThat(input.personA().getFirst().assetType()).isEqualTo("STOCK");
         assertThat(input.personA().getFirst().currentValue()).isEqualByComparingTo("1000000");
@@ -128,11 +141,19 @@ class GoalRepositoryTest {
         assertThat(input.personB().getFirst().assetType()).isEqualTo("DEPOSIT");
     }
 
-    @Test
-    void draftGoalCannotBeAnalyzed() {
-        jdbc.update("UPDATE goal SET status = 'DRAFT' WHERE id = 301");
+    @ParameterizedTest
+    @EnumSource(value = GoalStatus.class, names = {"ACHIEVED", "CANCELLED"})
+    void inactiveGoalCannotBeAnalyzed(GoalStatus status) {
+        jdbc.update("UPDATE goal SET status = ? WHERE id = 301", status.name());
         assertThatThrownBy(() -> inputService.load(101L))
-                .isInstanceOf(InvestmentAnalysisDataException.class).hasMessageContaining("온보딩");
+                .isInstanceOf(InvestmentAnalysisDataException.class).hasMessageContaining("진행 중");
+    }
+
+    @Test
+    void missingGoalStatusCannotBeAnalyzed() {
+        jdbc.update("UPDATE goal SET status = NULL WHERE id = 301");
+        assertThatThrownBy(() -> inputService.load(101L))
+                .isInstanceOf(InvestmentAnalysisDataException.class).hasMessageContaining("진행 중");
     }
 
     @Test
@@ -143,11 +164,12 @@ class GoalRepositoryTest {
                 .hasMessageContaining("monthlyContribution").hasMessageContaining("currentAmount");
     }
 
-    @Test
-    void unknownJointBandIsNotSubstitutedWithDefaultScore() {
-        jdbc.update("UPDATE goal SET monthly_surplus_band = 'UNKNOWN' WHERE id = 301");
+    @ParameterizedTest
+    @ValueSource(strings = {"monthly_surplus_band", "emergency_fund_months", "loss_reaction", "investment_experience"})
+    void missingJointAnswerIsNotSubstitutedWithDefaultScore(String column) {
+        jdbc.update("UPDATE goal SET " + column + " = NULL WHERE id = 301");
         assertThatThrownBy(() -> inputService.load(101L))
-                .isInstanceOf(InvestmentAnalysisDataException.class).hasMessageContaining("monthly_surplus_band");
+                .isInstanceOf(InvestmentAnalysisDataException.class).hasMessageContaining(column);
     }
 
     @Test

@@ -5,6 +5,7 @@
 요청은 `{"userId": 990001}`만 받는다. `userId`가 속한 `CONNECTED` 커플의 목표를 찾고,
 `goal`의 목표·공동 설문과 `investment_account` → `investment_asset`의 개인 보유 자산을 조회한다.
 커플당 목표는 1개이며 `ACTIVE` 목표만 분석한다. 탈퇴한 구성원은 제외하고, 연결된 목표가 여러 개면 오류로 응답한다.
+목표 상태와 공동 설문은 `Goal`의 공통 enum을 그대로 사용한다. `ACHIEVED`·`CANCELLED` 또는 상태 누락은 422로 거절하고, 공동 설문 enum 누락도 해당 필드를 안내하는 422로 응답한다. `DRAFT` 상태는 현재 모델에 없다.
 A는 `couple.male_id`, B는 `couple.female_id`로 고정하므로 어느 구성원이 요청해도 같은 입력으로 계산한다.
 
 개인 설문은 사용하지 않는다. 각자의 **활성 계좌에 있는 활성 자산의 현재 평가금액**을 기준으로 다음 추정 점수를 계산한다.
@@ -78,7 +79,7 @@ G의 임시 수익률 구간: 필요 연수익률 `≤2%:0~20`, `≤4%:20~35`, `
 - `POST /api/v1/investment-analyses/agreements`는 스펙상 JWT 토큰 인증이 필요한 API이다. (단, 개발 테스트 편의를 위해 `SecurityConfig`의 `PUBLIC_ENDPOINTS`에 포함되어 있어 무인증 접근도 허용되어 있다). 로그인 여부에 따른 별도 서버 분기는 없다.
 - 요청 필드는 양수 `userId` 하나다. 기존 `goalId`, `personA`, `personB`, `jointFund`, `goal` 입력은 제거한다.
 - `goal.target_amount`, `current_amount`, `monthly_investable_amount`, `target_date`를 사용한다. 목표까지 기간은 호출 시점부터 다시 계산하며 저장된 `investment_period_months`, `risk_profile_score`는 사용하지 않는다.
-- userId 누락·0·음수는 공통 400, 연결된 공동 목표 없음은 404, DB 필수값 누락·잘못된 값·온보딩 미완료·자산 부족은 `ANALYSIS_DATA_INCOMPLETE` 422로 응답한다. 목표일이 현재보다 1개월 이상 100년 이내가 아니면 기존 400이다. 누락 데이터는 온보딩 또는 자산 등록·동기화로 보완한 뒤 같은 userId로 재요청한다.
+- userId 누락·0·음수는 공통 400, 연결된 공동 목표 없음은 404, DB 필수값 누락·잘못된 금액/손실률·비활성 목표·자산 부족은 `ANALYSIS_DATA_INCOMPLETE` 422로 응답한다. 목표일이 현재보다 1개월 이상 100년 이내가 아니면 기존 400이다. 누락 데이터는 온보딩 또는 자산 등록·동기화로 보완한 뒤 같은 userId로 재요청한다. DB에 공통 enum에 없는 문자열이 직접 저장된 경우는 JPA 조회 단계의 데이터 오류이므로 DB 값을 정정해야 한다.
 - 현재 공개 설정에서는 요청 userId와 JWT 주체의 일치 여부를 검사하지 않는다. 운영 인증·소유권 검증은 별도 적용이 필요하다.
 - 기존 `investment_report`에 `goal_id`로 연결하여 실제 개월 수, 추천점수·전략·이유·목표조정안, 상태와 계산방식을 저장한다. 기존 `rationale`, `summary_message`, 목표 입력 스냅샷 컬럼을 재사용한다.
 - DB에서 읽은 분석 당시 금액·월 납입액·목표일을 보고서에 보관하며 기존 목표 자체를 수정하지 않는다. 필요수익률을 포트폴리오의 `expected_annual_return`으로 저장하지 않는다.

@@ -4,6 +4,7 @@ import com.moait.moai.common.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,8 +28,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(FieldError::getDefaultMessage)
+                .filter(msg -> msg != null && !msg.isBlank())
+                .orElse(ErrorCode.INVALID_INPUT.getMessage());
         return ResponseEntity.status(ErrorCode.INVALID_INPUT.getStatus())
-                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT, e.getBindingResult()));
+                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT, message));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
