@@ -55,3 +55,6 @@ Thumbs.db
 
 ### Claude Code ###
 .claude/settings.local.json
+
+### 로컬 작업 문서 (커밋 대상 아님) ###
+docs/api-spec.md
