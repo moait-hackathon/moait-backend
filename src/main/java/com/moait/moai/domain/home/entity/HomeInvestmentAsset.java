@@ -5,26 +5,22 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "investment_asset_snapshot")
+@Table(name = "investment_asset")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class InvestmentAssetSnapshot {
+public class HomeInvestmentAsset {
 
     @Id
-    @Column(name = "snapshot_id")
+    @Column(name = "investment_asset_id")
     private Long id;
 
-    @Column(name = "investment_asset_id", nullable = false)
-    private Long investmentAssetId;
-
-    @Column(name = "snapshot_date", nullable = false)
-    private LocalDate snapshotDate;
+    @Column(name = "investment_account_id", nullable = false)
+    private Long investmentAccountId;
 
     @Column(name = "principal_amount", nullable = false)
     private BigDecimal principalAmount;
@@ -34,4 +30,7 @@ public class InvestmentAssetSnapshot {
 
     @Column(name = "evaluation_profit_loss", nullable = false)
     private BigDecimal evaluationProfitLoss;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean active;
 }

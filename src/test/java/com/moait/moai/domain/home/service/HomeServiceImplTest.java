@@ -8,11 +8,11 @@ import com.moait.moai.domain.couple.entity.Couple;
 import com.moait.moai.domain.couple.repository.CoupleRepository;
 import com.moait.moai.domain.goal.entity.Goal;
 import com.moait.moai.domain.goal.repository.GoalRepository;
-import com.moait.moai.domain.home.entity.InvestmentAccount;
-import com.moait.moai.domain.home.entity.InvestmentAsset;
-import com.moait.moai.domain.home.entity.InvestmentAssetSnapshot;
+import com.moait.moai.domain.home.entity.HomeInvestmentAccount;
+import com.moait.moai.domain.home.entity.HomeInvestmentAsset;
+import com.moait.moai.domain.home.entity.HomeInvestmentAssetSnapshot;
 import com.moait.moai.domain.home.repository.InvestmentAccountRepository;
-import com.moait.moai.domain.home.repository.InvestmentAssetRepository;
+import com.moait.moai.domain.home.repository.HomeInvestmentAssetRepository;
 import com.moait.moai.domain.home.repository.InvestmentAssetSnapshotRepository;
 import com.moait.moai.domain.user.entity.User;
 import com.moait.moai.domain.user.repository.UserRepository;
@@ -41,7 +41,7 @@ class HomeServiceImplTest {
     @Mock
     private InvestmentAccountRepository accountRepository;
     @Mock
-    private InvestmentAssetRepository assetRepository;
+    private HomeInvestmentAssetRepository assetRepository;
     @Mock
     private InvestmentAssetSnapshotRepository snapshotRepository;
     @InjectMocks
@@ -84,10 +84,10 @@ class HomeServiceImplTest {
 
     @Test
     void 자산스냅샷을_날짜별그래프와_최신수익률로_집계한다() {
-        InvestmentAccount account = mock(InvestmentAccount.class);
-        InvestmentAsset asset = mock(InvestmentAsset.class);
-        InvestmentAssetSnapshot first = mock(InvestmentAssetSnapshot.class);
-        InvestmentAssetSnapshot latest = mock(InvestmentAssetSnapshot.class);
+        HomeInvestmentAccount account = mock(HomeInvestmentAccount.class);
+        HomeInvestmentAsset asset = mock(HomeInvestmentAsset.class);
+        HomeInvestmentAssetSnapshot first = mock(HomeInvestmentAssetSnapshot.class);
+        HomeInvestmentAssetSnapshot latest = mock(HomeInvestmentAssetSnapshot.class);
         Couple couple = mock(Couple.class);
         User partner = mock(User.class);
 
