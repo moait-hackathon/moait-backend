@@ -30,9 +30,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
-    /** 인증 없이 접근을 허용하는 경로. */
+    /** 인증 없이 접근을 허용하는 경로 (개발 테스트용 포함). */
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/v1/auth/**",
+            "/api/v1/investment-analyses/agreements", // API 스펙상 JWT 인증 필수이나 개발 테스트 편의를 위해 무인증 허용
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/v3/api-docs/**"

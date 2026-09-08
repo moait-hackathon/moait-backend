@@ -11,9 +11,7 @@ public interface InvestmentReportRepository extends JpaRepository<InvestmentRepo
     @Transactional(readOnly = true)
     @Query(value = """
             SELECT COUNT(*) FROM goal g
-            JOIN couple c ON c.id = g.couple_id
-            WHERE g.id = :goalId AND c.status = 'CONNECTED'
-              AND (c.male_id = :userId OR c.female_id = :userId)
+            WHERE g.id = :goalId
             """, nativeQuery = true)
-    Long countAccessibleGoal(@Param("goalId") Long goalId, @Param("userId") Long userId);
+    Long countGoal(@Param("goalId") Long goalId);
 }

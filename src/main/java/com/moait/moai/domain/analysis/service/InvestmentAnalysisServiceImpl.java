@@ -29,13 +29,10 @@ public class InvestmentAnalysisServiceImpl implements InvestmentAnalysisService 
     private final InvestmentReportRepository reportRepository;
 
     @Override
-    public InvestmentAgreementResponseDTO analyze(Long userId, InvestmentAgreementRequestDTO request) {
-        if (userId == null) {
-            throw new BusinessException(ErrorCode.UNAUTHORIZED);
-        }
-        if (reportRepository.countAccessibleGoal(request.goalId(), userId) == 0) {
+    public InvestmentAgreementResponseDTO analyze(InvestmentAgreementRequestDTO request) {
+        if (reportRepository.countGoal(request.goalId()) == 0) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND,
-                    "접근 가능한 공동 목표를 찾을 수 없습니다.");
+                    "공동 목표를 찾을 수 없습니다.");
         }
         RiskScore a = score(request.personA());
         RiskScore b = score(request.personB());

@@ -1,0 +1,48 @@
+{
+  "goalId": 990001,
+  "personA": {
+    "lossTolerance": "UP_TO_20",
+    "capitalProtection": "P80",
+    "lossReaction": "HOLD",
+    "psychologicalBurden": "TOLERATE_10",
+    "emergencyFundMonths": 6,
+    "incomeStability": "STABLE",
+    "fixedCostRatio": 35,
+    "investmentAssetRatio": 35,
+    "plannedExpense": "SOME",
+    "investmentHorizon": "Y5_10",
+    "withdrawalPlan": "NONE",
+    "investmentExperience": "BOND_FUND_ETF",
+    "financialKnowledgeCorrectAnswers": 3
+  },
+  "personB": {
+    "lossTolerance": "UP_TO_20",
+    "capitalProtection": "P80",
+    "lossReaction": "HOLD",
+    "psychologicalBurden": "TOLERATE_10",
+    "emergencyFundMonths": 6,
+    "incomeStability": "STABLE",
+    "fixedCostRatio": 35,
+    "investmentAssetRatio": 35,
+    "plannedExpense": "SOME",
+    "investmentHorizon": "Y5_10",
+    "withdrawalPlan": "NONE",
+    "investmentExperience": "BOND_FUND_ETF",
+    "financialKnowledgeCorrectAnswers": 3
+  },
+  "jointFund": {
+    "lossTolerance": "UP_TO_20",
+    "lossReaction": "HOLD",
+    "emergencyFundMonths": 6,
+    "monthlyNetIncome": 7000000,
+    "essentialExpenses": 3500000,
+    "debtRepayment": 500000,
+    "investmentExperience": "BOND_FUND_ETF"
+  },
+  "goal": {
+    "targetAmount": 195000000,
+    "currentAmount": 100000000,
+    "monthlyContribution": 3000000,
+    "targetDate": "2028-09-08"
+  }
+}

@@ -140,7 +140,7 @@ CREATE TABLE `goal` (
 DROP TABLE IF EXISTS `investment_report`;
 CREATE TABLE `investment_report` (
     `id`                         BIGINT       NOT NULL AUTO_INCREMENT,
-    `goal_id`                    BIGINT       NOT NULL,
+    `goal_id`                    BIGINT       NOT NULL COMMENT '분석 대상 공동 목표 ID',
     `input_target_amount`        BIGINT       NULL COMMENT '추천 당시 목표 금액',
     `input_current_amount`       BIGINT       NULL COMMENT '추천 당시 현재 마련한 금액',
     `input_target_date`          DATE         NULL COMMENT '추천 당시 목표 시점',
@@ -156,9 +156,9 @@ CREATE TABLE `investment_report` (
     `rationale`                  TEXT         NULL COMMENT '추천 근거 (AI 생성)',
     `input_monthly_contribution` BIGINT       NULL COMMENT '분석 당시 월 납입액',
     `investment_months`         INT          NULL COMMENT '분석 당시 목표까지 개월 수',
-    `recommended_risk_score`    INT          NULL COMMENT '추천 중단 시 NULL',
-    `recommended_strategy`      TEXT         NULL,
-    `goal_adjustments`          TEXT         NULL,
+    `recommended_risk_score`    INT          NULL COMMENT '최종 추천 투자 위험점수 (0~100, 높을수록 공격적, 추천 중단 시 NULL)',
+    `recommended_strategy`      TEXT         NULL COMMENT '추천 투자전략 (추천 중단 시 NULL)',
+    `goal_adjustments`          TEXT         NULL COMMENT '목표 조정 제안 목록 (줄바꿈으로 구분)',
     `status`                    VARCHAR(40)  NULL COMMENT '합의안 적합성 판정',
     `calculation_method`        VARCHAR(40)  NULL COMMENT '위험수준 계산 방식',
     `raw_response`               JSON         NULL COMMENT 'AI 원본 응답',

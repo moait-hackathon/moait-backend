@@ -43,14 +43,12 @@ $env:OPENAI_MODEL="gpt-4o-mini"
 
 ## 4. 요청 전송
 
-분석 API는 JWT 인증이 필요합니다. 발급받은 액세스 토큰과 샘플 JSON을 사용합니다.
+분석 API는 스펙상 JWT 토큰 인증이 필요한 API입니다. (단, 개발 테스트 편의를 위해 `SecurityConfig`에 의해 무인증 접근이 허용되어 있으므로 토큰 없이도 호출할 수 있습니다.) 샘플 JSON의 `goalId`는 실제 존재하는 공동 목표 ID여야 합니다.
 
 ```powershell
-$accessToken="발급받은_JWT_액세스_토큰"
 Invoke-RestMethod `
     -Method Post `
     -Uri "http://localhost:8080/api/v1/investment-analyses/agreements" `
-    -Headers @{ Authorization = "Bearer $accessToken" } `
     -ContentType "application/json; charset=utf-8" `
     -InFile ".\docs\investment-agreement-request.json"
 ```
@@ -68,6 +66,6 @@ http://localhost:8080/swagger-ui.html
 
 현재 분석 API는 DB의 ID를 받아 자동 조회하지 않고, 계산에 필요한 전체 설문과 목표 데이터를 요청 JSON으로 받습니다. 기존 DB에는 비상자금 개월 수, 고정비 부담률, 원금보전 기준, 금융지식 점수와 같은 필수 값이 없기 때문입니다. DB 자동 조회 API를 만들려면 해당 입력을 저장할 스키마를 먼저 확장해야 합니다.
 
-분석 결과는 요청의 `goalId`로 기존 `investment_report`에 저장됩니다. 토큰 사용자는 해당 목표의 연결된 커플 구성원이어야 합니다. 기존 DB에는 `docs/investment-report-agreement-migration.sql`을 한 번 적용합니다.
+분석 결과는 요청의 `goalId`로 기존 `investment_report`에 저장됩니다. 로그인 여부를 구분하지 않습니다. 기존 DB에는 `docs/investment-report-agreement-migration.sql`을 한 번 적용합니다.
 
 `targetDate`는 실행 시점보다 1개월 이상 100년 이내여야 합니다. 샘플 날짜가 지난 경우 미래 날짜로 변경합니다.

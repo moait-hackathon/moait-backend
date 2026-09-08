@@ -5,5 +5,5 @@ import com.moait.moai.domain.analysis.dto.InvestmentAgreementResponseDTO;
 
 public interface InvestmentAnalysisService {
 
-    InvestmentAgreementResponseDTO analyze(Long userId, InvestmentAgreementRequestDTO request);
+    InvestmentAgreementResponseDTO analyze(InvestmentAgreementRequestDTO request);
 }
