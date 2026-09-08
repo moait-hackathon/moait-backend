@@ -2,32 +2,26 @@ package com.moait.moai.domain.user.service;
 
 import com.moait.moai.common.enums.OnboardingStep;
 import com.moait.moai.domain.user.entity.User;
-import com.moait.moai.domain.user.repository.InvestmentProfileRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
  * 사용자의 다음 온보딩 단계를 판정한다.
  *
  * <pre>
- * 재무정보(income/asset) 없음        → FINANCIAL_INFO
- * 최신 투자성향 설문 없음             → INVESTMENT_PROFILE
- * 둘 다 완료                        → DONE
+ * CONNECTED 커플 없음                     → COUPLE_CONNECT
+ * 커플 연결됨 + goal 없거나 status=DRAFT   → GOAL_ONBOARDING
+ * goal.status = ACTIVE 이상               → DONE
  * </pre>
+ *
+ * <p><b>TODO</b> — 커플/공동목표 도메인 구현 전까지는 항상 {@link OnboardingStep#COUPLE_CONNECT}
+ * 를 반환한다. 커플 슬라이스에서 {@code CoupleRepository}, 목표 슬라이스에서 {@code GoalRepository}
+ * 를 주입해 위 규칙대로 완성할 것. (규격: {@code docs/api-spec.md} "onboardingStep 값")
  */
 @Component
-@RequiredArgsConstructor
 public class OnboardingStepResolver {
 
-    private final InvestmentProfileRepository investmentProfileRepository;
-
     public OnboardingStep resolve(User user) {
-        if (!user.hasFinancialInfo()) {
-            return OnboardingStep.FINANCIAL_INFO;
-        }
-        if (!investmentProfileRepository.existsByUserIdAndIsLatestTrue(user.getId())) {
-            return OnboardingStep.INVESTMENT_PROFILE;
-        }
-        return OnboardingStep.DONE;
+        // TODO(couple/goal): 커플 연결 여부 + goal.status 로 GOAL_ONBOARDING / DONE 판정
+        return OnboardingStep.COUPLE_CONNECT;
     }
 }

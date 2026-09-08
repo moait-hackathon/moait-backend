@@ -85,13 +85,12 @@ public class User extends BaseCreatedEntity {
         return new User(name, null, encodedPassword, Role.USER, gender, provider, providerId);
     }
 
-    /** 온보딩 - 기본 재무정보 입력. */
+    /**
+     * 연소득/총자산 입력. 온보딩 게이트가 아니며 마이페이지에서 입력한다.
+     * (2026-09 온보딩 개편 — 규격: {@code docs/api-spec.md})
+     */
     public void updateFinancialInfo(Long income, Long asset) {
         this.income = income;
         this.asset = asset;
-    }
-
-    public boolean hasFinancialInfo() {
-        return income != null && asset != null;
     }
 }
