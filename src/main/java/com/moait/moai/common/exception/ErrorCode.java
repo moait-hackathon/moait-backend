@@ -34,7 +34,14 @@ public enum ErrorCode {
     ALREADY_CONNECTED(HttpStatus.CONFLICT, "나 또는 상대가 이미 다른 사람과 연결되어 있습니다."),
     REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 상대의 대기 중인 연결 요청이 없습니다."),
     COUPLE_NOT_FOUND(HttpStatus.NOT_FOUND, "연결된 커플이 없습니다."),
-    NOT_CONNECTED(HttpStatus.CONFLICT, "연결된(CONNECTED) 상태가 아닙니다.");
+    NOT_CONNECTED(HttpStatus.CONFLICT, "연결된(CONNECTED) 상태가 아닙니다."),
+
+    // ===== 공동 목표 =====
+    COUPLE_NOT_CONNECTED(HttpStatus.CONFLICT, "커플 연결 후 이용할 수 있습니다."),
+    GOAL_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 공동 목표가 있습니다. 수정은 PATCH 를 이용하세요."),
+    GOAL_NOT_FOUND(HttpStatus.NOT_FOUND, "공동 목표가 없습니다."),
+    GOAL_NOT_ACTIVE(HttpStatus.CONFLICT, "취소된 목표는 수정할 수 없습니다."),
+    INVALID_TARGET_DATE(HttpStatus.BAD_REQUEST, "목표일은 오늘 이후여야 합니다.");
 
     private final HttpStatus status;
     private final String message;

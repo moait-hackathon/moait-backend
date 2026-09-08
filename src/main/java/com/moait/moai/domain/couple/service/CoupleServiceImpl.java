@@ -4,6 +4,7 @@ import com.moait.moai.common.enums.CoupleStatus;
 import com.moait.moai.common.enums.Gender;
 import com.moait.moai.common.enums.InvitationStatus;
 import com.moait.moai.common.enums.OnboardingStep;
+import com.moait.moai.common.enums.RiskProfileType;
 import com.moait.moai.common.exception.BusinessException;
 import com.moait.moai.common.exception.ErrorCode;
 import com.moait.moai.domain.couple.dto.CoupleConnectResponseDTO;
@@ -15,6 +16,8 @@ import com.moait.moai.domain.couple.entity.Couple;
 import com.moait.moai.domain.couple.entity.Invitation;
 import com.moait.moai.domain.couple.repository.CoupleRepository;
 import com.moait.moai.domain.couple.repository.InvitationRepository;
+import com.moait.moai.domain.goal.entity.Goal;
+import com.moait.moai.domain.goal.repository.GoalRepository;
 import com.moait.moai.domain.user.entity.User;
 import com.moait.moai.domain.user.repository.UserRepository;
 import com.moait.moai.domain.user.service.OnboardingStepResolver;
@@ -33,6 +36,7 @@ public class CoupleServiceImpl implements CoupleService {
     private final CoupleRepository coupleRepository;
     private final InvitationRepository invitationRepository;
     private final UserRepository userRepository;
+    private final GoalRepository goalRepository;
     private final OnboardingStepResolver onboardingStepResolver;
 
     @Override
@@ -149,8 +153,11 @@ public class CoupleServiceImpl implements CoupleService {
         User me = findUser(userId);
         User partner = findUser(couple.partnerOf(userId));
         OnboardingStep step = onboardingStepResolver.resolve(me);
-        // TODO(goal): jointRiskProfileType — 공동 목표 온보딩 완료 후 goal 에서 채운다
-        return CoupleMeResponseDTO.of(couple, me, partner, step, null);
+        RiskProfileType jointRiskProfileType = goalRepository.findByCoupleId(couple.getId())
+                .filter(goal -> !goal.isCancelled())
+                .map(Goal::getJointRiskProfileType)
+                .orElse(null);
+        return CoupleMeResponseDTO.of(couple, me, partner, step, jointRiskProfileType);
     }
 
     @Override
