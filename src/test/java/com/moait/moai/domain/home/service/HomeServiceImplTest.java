@@ -90,14 +90,19 @@ class HomeServiceImplTest {
         HomeInvestmentAssetSnapshot latest = mock(HomeInvestmentAssetSnapshot.class);
         Couple couple = mock(Couple.class);
         User partner = mock(User.class);
+        Goal goal = mock(Goal.class);
 
         when(account.getId()).thenReturn(20L);
         when(asset.getId()).thenReturn(30L);
+        when(couple.getId()).thenReturn(10L);
         when(asset.getPrincipalAmount()).thenReturn(new BigDecimal("1000"));
-        when(asset.getEvaluationProfitLoss()).thenReturn(new BigDecimal("100"));
+        when(asset.getCurrentValue()).thenReturn(new BigDecimal("1100"));
         when(couple.partnerOf(USER_ID)).thenReturn(2L);
         when(coupleRepository.findConnectedByUserId(USER_ID)).thenReturn(Optional.of(couple));
         when(userRepository.findById(2L)).thenReturn(Optional.of(partner));
+        when(goalRepository.findByCoupleId(10L)).thenReturn(Optional.of(goal));
+        when(goal.getTargetAmount()).thenReturn(10_000L);
+        when(goal.getCurrentAmount()).thenReturn(1_000L);
         when(accountRepository.findAllByUserIdInAndActiveTrue(List.of(USER_ID, 2L)))
                 .thenReturn(List.of(account));
         when(assetRepository.findAllByInvestmentAccountIdInAndActiveTrue(List.of(20L)))
@@ -105,20 +110,22 @@ class HomeServiceImplTest {
 
         when(first.getSnapshotDate()).thenReturn(LocalDate.of(2026, 1, 1));
         when(first.getPrincipalAmount()).thenReturn(new BigDecimal("1000"));
-        when(first.getEvaluationProfitLoss()).thenReturn(new BigDecimal("50"));
+        when(first.getCurrentValue()).thenReturn(new BigDecimal("1050"));
         when(latest.getSnapshotDate()).thenReturn(LocalDate.of(2026, 1, 2));
         when(latest.getPrincipalAmount()).thenReturn(new BigDecimal("1000"));
-        when(latest.getEvaluationProfitLoss()).thenReturn(new BigDecimal("100"));
+        when(latest.getCurrentValue()).thenReturn(new BigDecimal("1100"));
         when(snapshotRepository.findAllByInvestmentAssetIdInOrderBySnapshotDateAsc(List.of(30L)))
                 .thenReturn(List.of(latest, first));
         var result = homeService.getHome(USER_ID);
 
         assertThat(result.totalAssetReturnRate()).isEqualByComparingTo("10.0");
         assertThat(result.totalAssetChangeAmount()).isEqualByComparingTo("100");
+        assertThat(result.currentAmount()).isEqualTo(1_100L);
+        assertThat(result.achievementRate()).isEqualByComparingTo("11.0");
         assertThat(result.assetReturnRateGraph()).extracting(graph -> graph.date())
                 .containsExactly(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 2));
         assertThat(result.assetReturnRateGraph().get(0).returnRate()).isEqualByComparingTo("5.0");
-        assertThat(result.todayAssetReturnRate()).isEqualByComparingTo("10.0");
-        assertThat(result.todayAssetChangeAmount()).isEqualByComparingTo("100");
+        assertThat(result.todayAssetReturnRate()).isEqualByComparingTo("4.8");
+        assertThat(result.todayAssetChangeAmount()).isEqualByComparingTo("50");
     }
 }
