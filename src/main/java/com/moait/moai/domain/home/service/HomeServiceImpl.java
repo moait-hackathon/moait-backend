@@ -57,14 +57,15 @@ public class HomeServiceImpl implements HomeService {
 
         List<HomeInvestmentAsset> assets = findActiveAssets(userId, couple);
         AssetSummary assetSummary = summarizeAssets(assets);
+        Long currentAmount = currentAmountOf(goal, assetSummary.changeAmount());
 
         return new HomeResponseDTO(
                 user.getName(),
                 partner == null ? null : partner.getName(),
                 goal == null ? null : goal.getTargetDate(),
                 goal == null ? null : goal.getTargetAmount(),
-                goal == null ? null : goal.getCurrentAmount(),
-                achievementRate(goal),
+                currentAmount,
+                achievementRate(goal, currentAmount),
                 assetSummary.returnRate(),
                 assetSummary.changeAmount(),
                 assetSummary.graph(),
@@ -84,12 +85,22 @@ public class HomeServiceImpl implements HomeService {
                 accounts.stream().map(HomeInvestmentAccount::getId).toList());
     }
 
-    private BigDecimal achievementRate(Goal goal) {
-        if (goal == null || goal.getTargetAmount() == null || goal.getCurrentAmount() == null
+    private Long currentAmountOf(Goal goal, BigDecimal assetChangeAmount) {
+        if (goal == null || goal.getCurrentAmount() == null) {
+            return null;
+        }
+        return BigDecimal.valueOf(goal.getCurrentAmount())
+                .add(assetChangeAmount)
+                .setScale(0, RoundingMode.HALF_UP)
+                .longValue();
+    }
+
+    private BigDecimal achievementRate(Goal goal, Long currentAmount) {
+        if (goal == null || goal.getTargetAmount() == null || currentAmount == null
                 || goal.getTargetAmount() <= 0) {
             return ZERO_RATE;
         }
-        return BigDecimal.valueOf(goal.getCurrentAmount())
+        return BigDecimal.valueOf(currentAmount)
                 .divide(BigDecimal.valueOf(goal.getTargetAmount()), 6, RoundingMode.HALF_UP)
                 .multiply(HUNDRED)
                 .setScale(RATE_SCALE, RoundingMode.HALF_UP);
@@ -97,7 +108,8 @@ public class HomeServiceImpl implements HomeService {
 
     private AssetSummary summarizeAssets(List<HomeInvestmentAsset> assets) {
         BigDecimal principal = sum(assets, HomeInvestmentAsset::getPrincipalAmount);
-        BigDecimal changeAmount = sum(assets, HomeInvestmentAsset::getEvaluationProfitLoss);
+        BigDecimal currentValue = sum(assets, HomeInvestmentAsset::getCurrentValue);
+        BigDecimal changeAmount = currentValue.subtract(principal);
         BigDecimal returnRate = calculateRate(principal, changeAmount);
 
         if (assets.isEmpty()) {
@@ -113,12 +125,14 @@ public class HomeServiceImpl implements HomeService {
                         calculateRate(entry.getValue().principal(), entry.getValue().changeAmount())))
                 .toList();
 
-        if (aggregates.isEmpty()) {
-            return new AssetSummary(returnRate, changeAmount, graph, returnRate, changeAmount);
+        if (aggregates.size() < 2) {
+            return new AssetSummary(returnRate, changeAmount, graph, ZERO_RATE, BigDecimal.ZERO);
         }
         SnapshotAggregate latest = new ArrayList<>(aggregates.values()).get(aggregates.size() - 1);
+        SnapshotAggregate previous = new ArrayList<>(aggregates.values()).get(aggregates.size() - 2);
+        BigDecimal todayChangeAmount = latest.changeAmount().subtract(previous.changeAmount());
         return new AssetSummary(returnRate, changeAmount, graph,
-                calculateRate(latest.principal(), latest.changeAmount()), latest.changeAmount());
+                calculateRate(previous.currentValue(), todayChangeAmount), todayChangeAmount);
     }
 
     private Map<LocalDate, SnapshotAggregate> aggregateByDate(List<HomeInvestmentAssetSnapshot> snapshots) {
@@ -163,10 +177,12 @@ public class HomeServiceImpl implements HomeService {
     private static final class SnapshotAggregate {
         private BigDecimal principal = BigDecimal.ZERO;
         private BigDecimal changeAmount = BigDecimal.ZERO;
+        private BigDecimal currentValue = BigDecimal.ZERO;
 
         private void add(HomeInvestmentAssetSnapshot snapshot) {
             principal = principal.add(valueOrZero(snapshot.getPrincipalAmount()));
-            changeAmount = changeAmount.add(valueOrZero(snapshot.getEvaluationProfitLoss()));
+            currentValue = currentValue.add(valueOrZero(snapshot.getCurrentValue()));
+            changeAmount = currentValue.subtract(principal);
         }
 
         private BigDecimal principal() {
@@ -175,6 +191,10 @@ public class HomeServiceImpl implements HomeService {
 
         private BigDecimal changeAmount() {
             return changeAmount;
+        }
+
+        private BigDecimal currentValue() {
+            return currentValue;
         }
 
         private static BigDecimal valueOrZero(BigDecimal value) {
