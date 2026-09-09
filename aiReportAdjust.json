@@ -1,0 +1,195 @@
+{
+  "success": true,
+  "message": "투자 합의안 분석이 완료되었습니다.",
+  "data": {
+    "meta": {
+      "reportDate": "2026-09-08",
+      "targetAmount": 195000000,
+      "investmentMonths": 24
+    },
+    "headline": {
+      "tone": "WARNING",
+      "title": "목표 조정이\n필요해요!",
+      "titleHighlight": "필요해요!",
+      "description": "지금의 계획을 점검하고\n더 든든한 미래를 만들어봐요.",
+      "summaryTitle": "24개월 동안 1억 9,500만 원,\n현재 계획으로는 힘들어요",
+      "summaryHighlight": "힘들어요",
+      "summaryDescription": "월 투자액을 늘리거나 목표일을 조정하면 달성할 수 있어요."
+    },
+    "personA": {
+      "name": "두리",
+      "preferenceScore": 30,
+      "userLimit": 45,
+      "serviceLimit": 55,
+      "finalLimit": 45,
+      "profileType": "STABLE_SEEKING",
+      "profileTypeLabel": "안정추구형"
+    },
+    "personB": {
+      "name": "모아",
+      "preferenceScore": 70,
+      "userLimit": 75,
+      "serviceLimit": 70,
+      "finalLimit": 70,
+      "profileType": "GROWTH_SEEKING",
+      "profileTypeLabel": "성장추구형"
+    },
+    "jointFund": {
+      "preferenceScore": 45,
+      "userLimit": 45,
+      "serviceLimit": 50,
+      "finalLimit": 45,
+      "profileType": "BALANCED"
+    },
+    "agreedProfile": {
+      "score": 45,
+      "profileType": "BALANCED",
+      "profileTypeLabel": "균형형",
+      "summary": "모아님은 성장성을 중요하게 생각하지만, 두리님의 최대 허용손실률이 10%라서 주식 비중을 낮추고 현금성 자산을 확대한 균형형(45점)으로 합의됐어요."
+    },
+    "recommendation": {
+      "weightedScore": 50,
+      "centerScore": 55,
+      "rangeMin": 60,
+      "rangeMax": 70,
+      "finalMax": 50
+    },
+    "goalRequirement": {
+      "requiredAnnualReturnRate": 8.3,
+      "rangeMin": 65,
+      "rangeMax": 80,
+      "realistic": true,
+      "investmentMonths": 24,
+      "calculationMethod": "LEGACY_RETURN_BANDS"
+    },
+    "agreement": {
+      "status": "UNSUITABLE",
+      "recommendedRiskScore": null,
+      "summary": "목표금액을 195,000,000원에서 194,227,451원으로 772,549원 낮추거나, 월 납입액을 3,000,000원에서 3,029,872원으로 29,872원 늘리거나, 월 납입액을 3,000,000원으로 유지하고 목표일을 2028-10-08로 1개월 연장하는 조정안을 검토해야 합니다.",
+      "rationale": "월 납입액을 3,000,000원에서 3,029,872원으로 29,872원 늘리면 목표일까지 목표금액 195,000,000원에 도달할 수 있습니다. 반면, 월 납입액을 유지하면 목표기간이 1개월 연장되어 총 25개월이 소요되며, 목표일은 2028-10-08로 변경됩니다. 또한, 목표금액을 195,000,000원에서 194,227,451원으로 772,549원 낮추면 현재 납입액과 기간을 유지할 수 있습니다.",
+      "recommendedStrategy": null,
+      "alternatives": [
+        "월 납입액을 3,000,000원에서 3,029,872원으로 29,872원 늘리면 현재 목표일까지 목표금액에 도달하는 계산입니다. 연 8% 수익률 가정(임시 위험구간 기준, 월말 납입, 세금·수수료 제외).",
+        "월 납입액 3,000,000원을 유지하면 목표기간을 1개월 연장한 총 25개월(목표일 2028-10-08)에 계산상 도달합니다. 연 8% 수익률 가정(임시 위험구간 기준, 월말 납입, 세금·수수료 제외).",
+        "기간과 납입액을 유지하려면 목표금액을 195,000,000원에서 194,227,451원으로 772,549원 낮추는 안을 검토하세요. 연 8% 수익률 가정(임시 위험구간 기준, 월말 납입, 세금·수수료 제외).",
+        "목표일 예상금액 194,227,451원을 기준으로 1차 목표를 검토하고, 부족한 772,549원은 추가 목표로 분리할 수 있습니다. 실제 필수목표 금액은 두 사람이 정해야 합니다.",
+        "대안 비교: 납입액 조정은 목표일 유지, 기간 조정은 월 납입액 유지, 목표금액 조정은 현재 자금계획 유지입니다. 연 8% 수익률 가정(임시 위험구간 기준, 월말 납입, 세금·수수료 제외)에 따른 예상금액 비교이며, 목표 달성 확률이나 수익을 보장하지 않습니다."
+      ],
+      "cautions": [
+        "현재 계획의 투자전략은 UNSUITABLE 상태로, 조정안에 따라 목표금액, 월 납입액, 목표일을 조정해야 합니다."
+      ],
+      "aiGenerated": true
+    },
+    "goalProjection": {
+      "targetAmount": 195000000,
+      "projectedAmount": 194230000,
+      "gapAmount": -770000,
+      "timelineStart": "2025년 9월",
+      "timelineNow": "현재",
+      "timelineEnd": "2027년 9월",
+      "caption": "이대로라면 목표일까지 770,000원이 부족할 것으로 예상돼요.",
+      "actualSeries": [
+        { "x": 0, "y": 0.05 },
+        { "x": 0.32, "y": 0.2 },
+        { "x": 0.6, "y": 0.44 }
+      ],
+      "idealSeries": [
+        { "x": 0, "y": 0.06 },
+        { "x": 0.5, "y": 0.36 },
+        { "x": 1, "y": 0.92 }
+      ],
+      "projectedSeries": [
+        { "x": 0.6, "y": 0.44 },
+        { "x": 0.8, "y": 0.64 },
+        { "x": 1, "y": 0.8 }
+      ]
+    },
+    "riskReason": {
+      "body": "두 분의 투자 성향은 정반대에 가까웠지만, 두리님의 최대 허용손실 10%를 지키기 위해 두 분은 공동 위험 범위를 최대 50점까지로 합의했어요.",
+      "preferredScore": 45,
+      "maxScore": 50,
+      "requiredMin": 60,
+      "requiredMax": 70,
+      "callout": "목표를 지금 기간 안에 달성하려면 60~70점 수준의 위험이 필요해요.\n두 분이 합의한 범위(최대 50점)를 넘기지 않기 위해, 위험을 올리는 대신 아래처럼 계획을 조정하는 걸 추천해요."
+    },
+    "adjustmentOptions": [
+      {
+        "type": "MONTHLY_CONTRIBUTION",
+        "title": "월 납입액 늘리기",
+        "fromLabel": "3,000,000원",
+        "toLabel": "3,029,872원",
+        "keeps": "목표 금액 유지 · 목표일 유지"
+      },
+      {
+        "type": "TARGET_AMOUNT",
+        "title": "목표 금액 조정하기",
+        "fromLabel": "195,000,000원",
+        "toLabel": "194,220,000원",
+        "keeps": "목표일 유지 · 월 납입액 유지"
+      },
+      {
+        "type": "TARGET_DATE",
+        "title": "목표일 늦추기",
+        "fromLabel": "24개월",
+        "toLabel": "25개월",
+        "keeps": "목표 금액 유지 · 월 납입액 유지"
+      }
+    ],
+    "goalDiagnosis": {
+      "currentAmount": 50000000,
+      "targetAmount": 200000000,
+      "projectedAmount": 178000000,
+      "gapAmount": -22000000
+    },
+    "peerComparison": {
+      "readinessRate": 68,
+      "ourSavings": 50000000,
+      "peerAverageSavings": 43500000,
+      "percentileLabel": "상위 38%",
+      "note": "같은 목표기간·연령대 커플의 통계청(KOSIS) 가계금융복지조사 평균과 비교한 값이에요. 우리 커플의 실제 소비 습관을 반영한 값은 아니에요."
+    },
+    "planComparison": {
+      "currentPlanAmount": 168000000,
+      "aiPlanAmount": 202000000,
+      "note": "추천 계획 적용 시 예상 자산이 약 3,400만 원 늘어나요.\n그래프는 보수적·기준·긍정적 결과의 범위를 함께 반영했어요.",
+      "currentSeries": [
+        { "x": 0, "y": 0.14 },
+        { "x": 0.5, "y": 0.4 },
+        { "x": 1, "y": 0.64 }
+      ],
+      "aiSeries": [
+        { "x": 0, "y": 0.16 },
+        { "x": 0.5, "y": 0.5 },
+        { "x": 1, "y": 0.82 }
+      ],
+      "bandLowSeries": [
+        { "x": 0, "y": 0.1 },
+        { "x": 0.5, "y": 0.34 },
+        { "x": 1, "y": 0.6 }
+      ],
+      "bandHighSeries": [
+        { "x": 0, "y": 0.2 },
+        { "x": 0.5, "y": 0.58 },
+        { "x": 1, "y": 0.92 }
+      ]
+    },
+    "strategyComparison": null,
+    "assetAllocation": {
+      "strategyLabel": "균형형 · 45점 전략",
+      "slices": [
+        { "key": "CASH", "label": "예·적금 / 현금성", "ratio": 45 },
+        { "key": "BOND", "label": "채권형 자산", "ratio": 25 },
+        { "key": "EQUITY", "label": "주식형 ETF", "ratio": 25 },
+        { "key": "ALT", "label": "금 등 대체자산", "ratio": 5 }
+      ],
+      "note": "비상자금 1,800만 원은 투자 포트폴리오와 별도로, 생활비 6개월분으로 보유해요."
+    },
+    "lossSimulation": {
+      "expectedDrawdownRate": -12,
+      "cautionThresholdRate": -10,
+      "allowedLossRate": -15,
+      "callout": "추천안의 예상 최대 낙폭은 -12%로, 두 분이 합의한 최대 허용손실률 -15% 이내예요."
+    },
+    "disclaimer": "예상 금액은 연 8% 수익률, 월말 납입, 세금·수수료 제외 기준으로 계산한 값이며 실제 수익과 목표 달성을 보장하지 않습니다."
+  }
+}
